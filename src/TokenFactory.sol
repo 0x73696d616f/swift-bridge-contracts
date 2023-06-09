@@ -24,4 +24,8 @@ contract TokenFactory {
         proxy_ = Clones.cloneDeterministic(_implementation, keccak256(abi.encodePacked(name_, symbol_)));
         ERC20Token(proxy_).initialize(name_, symbol_, msg.sender);
     }
+
+    function getImplementation() external view returns (address) {
+        return _implementation;
+    }
 }

@@ -2,25 +2,49 @@
 pragma solidity ^0.8.19;
 
 import { TokenFactory } from "./TokenFactory.sol";
+import { ERC20Token } from "./ERC20Token.sol";
 
 contract SwiftGate {
-    uint256 internal immutable _chainId;
-    mapping(address => bool) internal _governors;
-    mapping(uint256 => uint256) internal _feeOfChainId;
-    mapping(uint256 => uint256) internal _feeIfBatchedOfChainId;
-    mapping(uint256 => mapping(address => address)) internal _tokens;
-    TokenFactory internal immutable _tokenFactory;
-    uint256 internal _minSignatures;
-
-    error LengthMismatchError();
-    error NotEnoughSignaturesError();
-    error InvalidSignatureError();
-
     struct Signature {
         uint8 v;
         bytes32 r;
         bytes32 s;
     }
+
+    struct SwReceiveParams {
+        address token;
+        uint256 amount;
+        address receiver;
+        uint16 srcChain;
+        uint16 dstChain;
+    }
+
+    uint16 internal immutable _chainId;
+    mapping(address => bool) internal _governors;
+    mapping(uint256 => uint256) internal _feeOfChainId;
+    mapping(uint256 => uint256) internal _feeIfBatchedOfChainId;
+
+    /// @notice Mapping of chainId => destination token => wrappedToken
+    mapping(uint256 => mapping(address => address)) internal _wrappedTokens;
+
+    /// @notice Mapping of chainId => local token => is supported token
+    mapping(uint256 => mapping(address => bool)) internal _dstTokens;
+
+    /// @notice Factory for creating wrapped tokens
+    TokenFactory internal immutable _tokenFactory;
+
+    /// @notice Minimum signatures to validate messages
+    uint256 internal _minSignatures;
+
+    error LengthMismatchError();
+    error NotEnoughSignaturesError();
+    error InvalidSignatureError();
+    error WrontDstChainError(uint256 chainId);
+    error UnsupportedTokenError(uint16 chainId, address token);
+    error ZeroAddressError();
+    error ZeroAmountError();
+
+    event SwiftSend(address token, uint256 amount, address receiver, uint16 dstChain, bool isSingle);
 
     constructor(uint16 chainId_, address[] memory governors_, uint256 minSignatures_) {
         _chainId = chainId_;
@@ -28,32 +52,89 @@ contract SwiftGate {
         _minSignatures = minSignatures_;
         for(uint i_; i_ < governors_.length;) {
             _governors[governors_[i_]] = true;
+
+            unchecked {
+                ++i_;
+            }
         }
     }
  
+    /** 
+     * @notice Receives a batch of tokens, mints the wrapped versions and verifies the signatures.
+     */
     function swiftReceive(
-        address[] calldata token_, 
-        uint256[] calldata amount_, 
-        address[] calldata receiver_, 
-        uint16[] calldata srcChain_,
-        uint16[] calldata dstChain_, 
+        SwReceiveParams[] calldata params_,
         Signature[] calldata signatures_
-    ) external {}
+    ) external {
+        bytes32 messageHash_;
+        for (uint i_ = 0; i_ < params_.length;) {
+            if (params_[i_].dstChain != _chainId) revert WrontDstChainError(params_[i_].dstChain); // prevents message replay
 
-    function swiftSend(address token_, uint256 amount_, address receiver_, uint16 dstChain_, bool isSingle_) public {}
+            messageHash_ = keccak256(
+                abi.encodePacked(
+                    messageHash_, 
+                    params_[i_].token, 
+                    params_[i_].amount,
+                    params_[i_].receiver,
+                    params_[i_].srcChain, 
+                    params_[i_].dstChain
+                )
+            );
 
-    function swiftSign(
-        address[] calldata token_, 
-        uint256[] calldata amount_, 
-        address[] calldata receiver_, 
-        uint16[] calldata srcChain_,
-        uint16[] calldata dstChain_, 
+            address wrappedToken_ = _wrappedTokens[params_[i_].srcChain][params_[i_].token];
+
+            if (wrappedToken_ != address(0)) {
+                ERC20Token(wrappedToken_).mint(params_[i_].receiver, params_[i_].amount);
+            } else {
+                ERC20Token(params_[i_].token).transfer(params_[i_].receiver, params_[i_].amount);
+            }
+
+            unchecked {
+                ++i_;
+            }
+        }
+        _verifySignatures(messageHash_, signatures_);
+    }
+
+    /** 
+     *  @notice Sends a token to another chain.
+     *  @param token_ The token to send.
+     *  @param amount_ The amount of tokens to send.
+     *  @param receiver_ The receiver of the tokens.
+     *  @param dstChain_ The destination chain.
+     *  @param isSingle_ Whether the token is to be batched with other tokens to save gas or not.
+     */ 
+    function swiftSend(address token_, uint256 amount_, address receiver_, uint16 dstChain_, bool isSingle_) external {
+        if (receiver_ == address(0)) revert ZeroAddressError();
+        if (amount_ == 0) revert ZeroAmountError();
+
+        address wrappedToken_ = _wrappedTokens[dstChain_][token_];
+
+        if (wrappedToken_ == address(0) && !_dstTokens[dstChain_][token_]) revert UnsupportedTokenError(dstChain_, token_);
+
+        if (wrappedToken_ != address(0)) {
+            ERC20Token(wrappedToken_).burn(msg.sender, amount_);
+        } else {
+            ERC20Token(token_).transferFrom(msg.sender, address(this), amount_);
+        }
+
+        emit SwiftSend(token_, amount_, receiver_, dstChain_, isSingle_);
+    }   
+
+    function addWrappedToken(
+        uint16 chainId_, 
+        address token_, 
+        string memory name_, 
+        string memory symbol_, 
         Signature[] calldata signatures_
-    ) external {}
-
-    function addToken(uint16 chainId_, address token_, string memory name_, string memory symbol_, Signature[] calldata signatures_) external {
+    ) external {
         _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, token_, name_, symbol_)), signatures_);
-        _tokens[chainId_][token_] = _tokenFactory.create(name_, symbol_);
+        _wrappedTokens[chainId_][token_] = _tokenFactory.create(name_, symbol_);
+    }
+
+    function addDstToken(uint16 chainId_, address token_, Signature[] calldata signatures_) external {
+        _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, token_)), signatures_);
+        _dstTokens[chainId_][token_] = true;
     }
 
     ////////////////////////////// Setters ///////////////////////////////////////////////
@@ -103,8 +184,8 @@ contract SwiftGate {
         return _governors[account_];
     }
 
-    function getToken(uint16 chainId_, address token_) external view returns (address) {
-        return _tokens[chainId_][token_];
+    function getWrappedToken(uint16 chainId_, address token_) external view returns (address) {
+        return _wrappedTokens[chainId_][token_];
     }
 
     function getTokenFactory() external view returns (address) {
