@@ -80,6 +80,9 @@ contract SwiftGate {
  
     /** 
      * @notice Receives a batch of tokens, mints the wrapped versions and verifies the signatures.
+     *  @param params_ Struct with the parameters to sned across bridges - includes token, amount, receiver, srcChain, dstChain
+     *  @param signatures_ Array of signatures from the governors (message hash signed by governors )
+     *  @param salt_ Message Hash 
      */
     function swiftReceive(
         SwReceiveParams[] calldata params_,
@@ -141,6 +144,9 @@ contract SwiftGate {
         emit SwiftSend(token_, amount_, receiver_, dstChain_, isSingle_);
     }   
 
+    /** 
+     *  @notice Adds a wrapped token to the respective mapping so it can be used across chains
+     */
     function addWrappedToken(
         uint16 chainId_, 
         address token_, 
@@ -155,17 +161,26 @@ contract SwiftGate {
         _wrappedToRemoteTokens[wrappedToken_] = token_;
     }
 
+    /** 
+     *  @notice Adds a token to the dstTokens mapping (verified with the signatures)
+     */
     function addDstToken(uint16 chainId_, address token_, Signature[] calldata signatures_, bytes32 salt_) external {
         _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, chainId_, token_)), signatures_);
         _dstTokens[chainId_][token_] = true;
     }
 
+    /** 
+     *  @notice Approves a given token so it can be handled in aave lending pool
+     */
     function depositToAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_, bytes32 salt_) external {
         _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, token_, amount_)), signatures_);
         SwiftERC20(token_).approve(address(_aaveV3LendingPool), amount_);
         _aaveV3LendingPool.supply(token_, amount_, address(this), 0);
     }
 
+    /** 
+     *  @notice Claims rewards from aave (that will then be distributed to the governors)
+     */
     function withdrawFromAaveV3(address token_, address aToken_, uint256 amount_, Signature[] calldata signatures_, bytes32 salt_) external {
         _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, token_, amount_)), signatures_);
         _aaveV3LendingPool.withdraw(token_, amount_, address(this));
