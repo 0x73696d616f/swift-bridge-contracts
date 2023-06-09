@@ -33,7 +33,10 @@ contract SwiftGateTest is Test {
         
         swiftGateEthereum = Helpers._deploySwiftGate(ETHEREUM_CHAIN_ID, governors, MIN_SIGATURES, AAVE_V3_MAINNET, AAVE_V3_REWARDS_CONTROLLER_MAINNET);
         vm.label(address(swiftGateEthereum), "swiftGateEthereum");
+
+        vm.startPrank(makeAddr("randomDeployer"));
         swiftGateOptimism = Helpers._deploySwiftGate(OPTIMISM_CHAIN_ID, governors, MIN_SIGATURES, address(0), address(0));
+        vm.stopPrank();
         vm.label(address(swiftGateOptimism), "swiftGateOptimism");
 
         wrappedETH = address(new ERC20("Wrapped ETH", "WETH"));
