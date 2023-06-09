@@ -2,7 +2,9 @@
 pragma solidity ^0.8.19;
 
 import { TokenFactory } from "./TokenFactory.sol";
-import { ERC20Token } from "./ERC20Token.sol";
+import { SwiftERC20 } from "./SwiftERC20.sol";
+
+import "forge-std/Test.sol";
 
 contract SwiftGate {
     struct Signature {
@@ -25,7 +27,10 @@ contract SwiftGate {
     mapping(uint256 => uint256) internal _feeIfBatchedOfChainId;
 
     /// @notice Mapping of chainId => destination token => wrappedToken
-    mapping(uint256 => mapping(address => address)) internal _wrappedTokens;
+    mapping(uint256 => mapping(address => address)) internal _remoteToWrappedTokens;
+
+    /// @notice Mapping of token to wrapped token
+    mapping(address => address) internal _wrappedToRemoteTokens;
 
     /// @notice Mapping of chainId => local token => is supported token
     mapping(uint256 => mapping(address => bool)) internal _dstTokens;
@@ -81,12 +86,12 @@ contract SwiftGate {
                 )
             );
 
-            address wrappedToken_ = _wrappedTokens[params_[i_].srcChain][params_[i_].token];
+            address wrappedToken_ = _remoteToWrappedTokens[params_[i_].srcChain][params_[i_].token];
 
             if (wrappedToken_ != address(0)) {
-                ERC20Token(wrappedToken_).mint(params_[i_].receiver, params_[i_].amount);
+                SwiftERC20(wrappedToken_).mint(params_[i_].receiver, params_[i_].amount);
             } else {
-                ERC20Token(params_[i_].token).transfer(params_[i_].receiver, params_[i_].amount);
+                SwiftERC20(params_[i_].token).transfer(params_[i_].receiver, params_[i_].amount);
             }
 
             unchecked {
@@ -108,14 +113,14 @@ contract SwiftGate {
         if (receiver_ == address(0)) revert ZeroAddressError();
         if (amount_ == 0) revert ZeroAmountError();
 
-        address wrappedToken_ = _wrappedTokens[dstChain_][token_];
+        address remoteToken_ = _wrappedToRemoteTokens[token_];
 
-        if (wrappedToken_ == address(0) && !_dstTokens[dstChain_][token_]) revert UnsupportedTokenError(dstChain_, token_);
+        if (remoteToken_ == address(0) && !_dstTokens[dstChain_][token_]) revert UnsupportedTokenError(dstChain_, token_);
 
-        if (wrappedToken_ != address(0)) {
-            ERC20Token(wrappedToken_).burn(msg.sender, amount_);
+        if (remoteToken_ != address(0)) {
+            SwiftERC20(token_).burn(msg.sender, amount_);
         } else {
-            ERC20Token(token_).transferFrom(msg.sender, address(this), amount_);
+            SwiftERC20(token_).transferFrom(msg.sender, address(this), amount_);
         }
 
         emit SwiftSend(token_, amount_, receiver_, dstChain_, isSingle_);
@@ -129,7 +134,9 @@ contract SwiftGate {
         Signature[] calldata signatures_
     ) external {
         _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, token_, name_, symbol_)), signatures_);
-        _wrappedTokens[chainId_][token_] = _tokenFactory.create(name_, symbol_);
+        address wrappedToken_ = _tokenFactory.create(name_, symbol_, token_);
+        _remoteToWrappedTokens[chainId_][token_] = wrappedToken_;
+        _wrappedToRemoteTokens[wrappedToken_] = token_;
     }
 
     function addDstToken(uint16 chainId_, address token_, Signature[] calldata signatures_) external {
@@ -185,11 +192,15 @@ contract SwiftGate {
     }
 
     function getWrappedToken(uint16 chainId_, address token_) external view returns (address) {
-        return _wrappedTokens[chainId_][token_];
+        return _remoteToWrappedTokens[chainId_][token_];
     }
 
     function getTokenFactory() external view returns (address) {
         return address(_tokenFactory);
+    }
+
+    function getRemoteTokenOf(address wrappedToken_) external view returns (address) {
+        return _wrappedToRemoteTokens[wrappedToken_];
     }
 
     ////////////////////////////// Internal ///////////////////////////////////////////////

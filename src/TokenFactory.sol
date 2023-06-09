@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import { Clones } from "lib/openzeppelin-contracts/contracts/proxy/Clones.sol"; 
-import { ERC20Token } from "./ERC20Token.sol";
+import { SwiftERC20 } from "./SwiftERC20.sol";
 
 contract TokenFactory {
     address internal immutable _implementation;
@@ -16,13 +16,13 @@ contract TokenFactory {
     } 
 
     constructor() {
-        _implementation = address(new ERC20Token());
+        _implementation = address(new SwiftERC20());
         _swiftGate = msg.sender;
     }
 
-    function create(string memory name_, string memory symbol_) external onlySwiftGate returns (address proxy_) {
+    function create(string memory name_, string memory symbol_, address remoteToken_) external onlySwiftGate returns (address proxy_) {
         proxy_ = Clones.cloneDeterministic(_implementation, keccak256(abi.encodePacked(name_, symbol_)));
-        ERC20Token(proxy_).initialize(name_, symbol_, msg.sender);
+        SwiftERC20(proxy_).initialize(name_, symbol_, msg.sender, remoteToken_);
     }
 
     function getImplementation() external view returns (address) {

@@ -25,13 +25,17 @@ contract SwiftGateTest is Test {
         }
         
         swiftGateEthereum_ = new SwiftGate(ETHEREUM_CHAIN_ID, governors, MIN_SIGATURES);
+        vm.label(address(swiftGateEthereum_), "swiftGateEthereum");
         swiftGateOptimism_ = new SwiftGate(OPTIMISM_CHAIN_ID, governors, MIN_SIGATURES);
+        vm.label(address(swiftGateOptimism_), "swiftGateOptimism");
 
         wrappedETH = address(new ERC20("Wrapped ETH", "WETH"));
+        vm.label(wrappedETH, "wrappedETH");
         wrappedETHOptimism = address(new ERC20("Wrapped ETH OPTIMISM", "WETHOP"));
+        vm.label(wrappedETHOptimism, "wrappedETHOptimism");
 
         _addWrappedToken(address(swiftGateOptimism_), OPTIMISM_CHAIN_ID, ETHEREUM_CHAIN_ID, address(wrappedETH), "Swift Gate Wrapped ETH", "SGWETH");
-        _addWrappedToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETHOptimism), "Swift Gate Wrapped ETH OPTIMISM", "SGWETHOP");
+        _addWrappedToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETHOptimism), "Swift Gate Wrapped OPETH", "SGWOPETH");
     
         _addDstToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETH));
         _addDstToken(address(swiftGateOptimism_), OPTIMISM_CHAIN_ID, ETHEREUM_CHAIN_ID, address(wrappedETHOptimism));
@@ -67,7 +71,7 @@ contract SwiftGateTest is Test {
         assertEq(wrappedETHOnOptimism_.balanceOf(receiver_), amount_);
     }
 
-    function testBatchSwiftSendFromEthereumToOptimism() public {
+    function testBatchSwiftSendFromEthereumToOptimismBackAndForth() public {
         uint256 amount_ = 100;
         uint256 batchSize_ = 20;
         SwiftGate.SwReceiveParams[] memory params_ = new SwiftGate.SwReceiveParams[](batchSize_);
@@ -80,21 +84,28 @@ contract SwiftGateTest is Test {
             params_[i_ - 1].amount = amount_;
             params_[i_ - 1].srcChain = ETHEREUM_CHAIN_ID;
             params_[i_ - 1].dstChain = OPTIMISM_CHAIN_ID;
-
-            uint256 initialBalance_ = ERC20(wrappedETH).balanceOf(address(swiftGateEthereum_));
-            
-            vm.startPrank(sender_);
+           
             deal(wrappedETH, sender_, amount_);
-            ERC20(wrappedETH).approve(address(swiftGateEthereum_), amount_);
-            swiftGateEthereum_.swiftSend(address(wrappedETH), amount_, receiver_, OPTIMISM_CHAIN_ID, true);
-            vm.stopPrank();
-
-            assertEq(ERC20(wrappedETH).balanceOf(address(swiftGateEthereum_)), initialBalance_ + amount_);
-            assertEq(ERC20(wrappedETH).balanceOf(sender_), 0);
+            _swiftSend(address(swiftGateEthereum_), sender_, address(wrappedETH), amount_, receiver_, OPTIMISM_CHAIN_ID);
         }
 
         console.log("swift batch receive size", batchSize_);
         _swiftReceive(address(swiftGateOptimism_), params_);
+
+        for (uint i_ = 1; i_ <= batchSize_; i_++) {
+            address sender_ = params_[i_ - 1].receiver;
+            address receiver_ = makeAddr(string(abi.encodePacked("sender", vm.toString(i_)))); 
+            address wrappedToken_ = swiftGateOptimism_.getWrappedToken(params_[i_ - 1].srcChain, params_[i_ - 1].token);
+
+            _swiftSend(address(swiftGateOptimism_), sender_, wrappedToken_, amount_, receiver_, ETHEREUM_CHAIN_ID);
+
+            params_[i_ - 1].receiver = receiver_;
+            params_[i_ - 1].srcChain = OPTIMISM_CHAIN_ID;
+            params_[i_ - 1].dstChain = ETHEREUM_CHAIN_ID;
+        }
+
+        console.log("swift batch receive size destination", batchSize_);
+        _swiftReceive(address(swiftGateEthereum_), params_);
     }
 
     ////////////////////////////////// Helpers ///////////////////////////////////////////////////
@@ -148,8 +159,25 @@ contract SwiftGateTest is Test {
 
         for (uint i_; i_ < params_.length; i_++) {
             ERC20 wrappedToken_ = ERC20(SwiftGate(swiftGate_).getWrappedToken(params_[i_].srcChain, params_[i_].token));
-            assertEq(wrappedToken_.balanceOf(params_[i_].receiver), params_[i_].amount);
+            if (address(wrappedToken_) != address(0))
+                assertEq(wrappedToken_.balanceOf(params_[i_].receiver), params_[i_].amount);
+            else
+                assertEq(ERC20(params_[i_].token).balanceOf(params_[i_].receiver), params_[i_].amount);
         }
+    }
+
+    function _swiftSend(address swiftGate_, address sender_, address token_, uint256 amount_, address receiver_, uint16 dstChain_) internal {
+        uint256 initialSWGateBalance_ = ERC20(token_).balanceOf(swiftGate_);
+
+        vm.startPrank(sender_);
+        ERC20(token_).approve(swiftGate_, amount_);
+        SwiftGate(swiftGate_).swiftSend(token_, amount_, receiver_, dstChain_, true);
+        vm.stopPrank();
+
+        if (SwiftGate(swiftGate_).getRemoteTokenOf(token_) == address(0))
+            assertEq(ERC20(token_).balanceOf(swiftGate_), initialSWGateBalance_ + amount_);
+        else
+            assertEq(ERC20(token_).balanceOf(sender_), initialSWGateBalance_);
     }
     
     function _getSignatures(bytes32 messageHash_) internal view returns (SwiftGate.Signature[] memory signatures_ ) {
