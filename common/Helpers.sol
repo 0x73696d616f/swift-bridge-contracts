@@ -19,11 +19,12 @@ library Helpers {
         address token_, 
         string memory name_, 
         string memory symbol_,
-        uint256[] memory governorPKs
+        uint256[] memory governorPKs,
+        bytes32 salt_
     ) internal {
-        bytes32 addWrappedTokenHash_ = keccak256(abi.encodePacked(localChainId_, remoteChainId_, token_, name_, symbol_));
+        bytes32 addWrappedTokenHash_ = keccak256(abi.encodePacked(salt_, localChainId_, remoteChainId_, token_, name_, symbol_));
         SwiftGate.Signature[] memory signatures_ = _getSignatures(addWrappedTokenHash_, governorPKs);
-        SwiftGate(swiftGate_).addWrappedToken(remoteChainId_, token_, name_, symbol_, signatures_);
+        SwiftGate(swiftGate_).addWrappedToken(remoteChainId_, token_, name_, symbol_, signatures_, salt_);
     }
 
     function _addDstToken(
@@ -31,17 +32,45 @@ library Helpers {
         uint16 localChainId_, 
         uint16 remoteChainId_,
         address token_,
-        uint256[] memory governorPKs
+        uint256[] memory governorPKs,
+        bytes32 salt_
     ) internal {
-        bytes32 addDstTokenHash_ = keccak256(abi.encodePacked(localChainId_, remoteChainId_, token_));
+        bytes32 addDstTokenHash_ = keccak256(abi.encodePacked(salt_, localChainId_, remoteChainId_, token_));
         SwiftGate.Signature[] memory signatures_ = _getSignatures(addDstTokenHash_, governorPKs);
-        SwiftGate(swiftGate_).addDstToken(remoteChainId_, token_, signatures_);
+        SwiftGate(swiftGate_).addDstToken(remoteChainId_, token_, signatures_, salt_);
+    }
+
+    function _depositToAaveV3(
+        address swiftGate_, 
+        uint16 chainId_, 
+        address token_, 
+        uint256 amount_, 
+        uint256[] memory governorPKs, 
+        bytes32 salt_
+    ) internal {
+        bytes32 depositToAaveV3Hash_ = keccak256(abi.encodePacked(salt_, chainId_, token_, amount_));
+        SwiftGate.Signature[] memory signatures_ = _getSignatures(depositToAaveV3Hash_, governorPKs);
+        SwiftGate(swiftGate_).depositToAaveV3(token_, amount_, signatures_, salt_);
+    }
+
+    function _withdrawFromAaveV3(
+        address swiftGate_, 
+        uint16 chainId_, 
+        address token_, 
+        address aToken_,
+        uint256 amount_, 
+        uint256[] memory governorPKs, 
+        bytes32 salt_
+    ) internal {
+        bytes32 depositToAaveV3Hash_ = keccak256(abi.encodePacked(salt_, chainId_, token_, amount_));
+        SwiftGate.Signature[] memory signatures_ = _getSignatures(depositToAaveV3Hash_, governorPKs);
+        SwiftGate(swiftGate_).withdrawFromAaveV3(token_, aToken_, amount_, signatures_, salt_);
     }
 
     function _getSignatures(
         bytes32 messageHash_, 
         uint256[] memory governorPKs
-    ) internal view returns (SwiftGate.Signature[] memory signatures_ ) {
+    ) internal pure returns (SwiftGate.Signature[] memory signatures_ ) {
         signatures_ = new SwiftGate.Signature[](governorPKs.length);
         for (uint i_; i_ < governorPKs.length; i_++) {
             (uint8 v_, bytes32 r_, bytes32 s_) = vm.sign(governorPKs[i_], messageHash_);

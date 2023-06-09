@@ -29,6 +29,7 @@ contract SwiftGate {
     mapping(address => bool) internal _governors;
     mapping(uint256 => uint256) internal _feeOfChainId;
     mapping(uint256 => uint256) internal _feeIfBatchedOfChainId;
+    mapping(bytes32 => bool) internal _signedMessages;
 
     /// @notice Mapping of chainId => destination token => wrappedToken
     mapping(uint256 => mapping(address => address)) internal _remoteToWrappedTokens;
@@ -53,6 +54,7 @@ contract SwiftGate {
     error ZeroAddressError();
     error ZeroAmountError();
     error ChainIdAlreadySetError();
+    error DuplicateSignatureError();
 
     event SwiftSend(address token, uint256 amount, address receiver, uint16 dstChain, bool isSingle);
 
@@ -81,9 +83,10 @@ contract SwiftGate {
      */
     function swiftReceive(
         SwReceiveParams[] calldata params_,
-        Signature[] calldata signatures_
+        Signature[] calldata signatures_,
+        bytes32 salt_
     ) external {
-        bytes32 messageHash_;
+        bytes32 messageHash_ = salt_;
         for (uint i_ = 0; i_ < params_.length;) {
             if (params_[i_].dstChain != _chainId) revert WrontDstChainError(params_[i_].dstChain); // prevents message replay
 
@@ -143,44 +146,49 @@ contract SwiftGate {
         address token_, 
         string memory name_, 
         string memory symbol_, 
-        Signature[] calldata signatures_
+        Signature[] calldata signatures_,
+        bytes32 salt_
     ) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, token_, name_, symbol_)), signatures_);
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, chainId_, token_, name_, symbol_)), signatures_);
         address wrappedToken_ = _tokenFactory.create(name_, symbol_, token_);
         _remoteToWrappedTokens[chainId_][token_] = wrappedToken_;
         _wrappedToRemoteTokens[wrappedToken_] = token_;
     }
 
-    function addDstToken(uint16 chainId_, address token_, Signature[] calldata signatures_) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, token_)), signatures_);
+    function addDstToken(uint16 chainId_, address token_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, chainId_, token_)), signatures_);
         _dstTokens[chainId_][token_] = true;
     }
 
-    function depositToAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, token_, amount_)), signatures_);
+    function depositToAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, token_, amount_)), signatures_);
+        SwiftERC20(token_).approve(address(_aaveV3LendingPool), amount_);
         _aaveV3LendingPool.supply(token_, amount_, address(this), 0);
     }
 
-    function withdrawFromAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, token_, amount_)), signatures_);
+    function withdrawFromAaveV3(address token_, address aToken_, uint256 amount_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, token_, amount_)), signatures_);
         _aaveV3LendingPool.withdraw(token_, amount_, address(this));
+        address[] memory aTokens_ = new address[](1);
+        aTokens_[0] = aToken_;
+        _aaveV3RewardsController.claimAllRewardsToSelf(aTokens_);
     }
 
     ////////////////////////////// Setters ///////////////////////////////////////////////
 
-    function setFeeOfChainId(uint16 chainId_, uint256 fee_, Signature[] calldata signatures_) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, fee_)), signatures_);
+    function setFeeOfChainId(uint16 chainId_, uint256 fee_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, chainId_, fee_)), signatures_);
         _feeOfChainId[chainId_] = fee_;
     }
 
-    function setFeeIfBatchedOfChainId(uint16 chainId_, uint256 feeIfBatched_, Signature[] calldata signatures_) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, chainId_, feeIfBatched_)), signatures_);
+    function setFeeIfBatchedOfChainId(uint16 chainId_, uint256 feeIfBatched_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, chainId_, feeIfBatched_)), signatures_);
         _feeIfBatchedOfChainId[chainId_] = feeIfBatched_;
     }
 
-    function setGovernors(address[] calldata governors_, bool[] calldata set_, Signature[] calldata signatures_) external {
+    function setGovernors(address[] calldata governors_, bool[] calldata set_, Signature[] calldata signatures_, bytes32 salt_) external {
         if (governors_.length != set_.length || set_.length != signatures_.length) revert LengthMismatchError();
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, governors_, set_)), signatures_);
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, governors_, set_)), signatures_);
         
         for (uint i_; i_ < governors_.length;) {
             _governors[governors_[i_]] = set_[i_];
@@ -190,8 +198,8 @@ contract SwiftGate {
         }
     }
 
-    function setMinSignatures(uint256 minSignatures_, Signature[] calldata signatures_) external {
-        _verifySignatures(keccak256(abi.encodePacked(_chainId, minSignatures_)), signatures_);
+    function setMinSignatures(uint256 minSignatures_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, minSignatures_)), signatures_);
         _minSignatures = minSignatures_;
     }
 
@@ -239,7 +247,10 @@ contract SwiftGate {
 
     ////////////////////////////// Internal ///////////////////////////////////////////////
 
-    function _verifySignatures(bytes32 messageHash_, Signature[] calldata signatures_) internal view {
+    function _verifySignatures(bytes32 messageHash_, Signature[] calldata signatures_) internal {
+        if(_signedMessages[messageHash_]) revert DuplicateSignatureError();
+        _signedMessages[messageHash_] = true;
+
         if (signatures_.length < _minSignatures) revert NotEnoughSignaturesError();
         for(uint i_; i_ < signatures_.length;) {
             address signer_ = ecrecover(messageHash_, signatures_[i_].v, signatures_[i_].r, signatures_[i_].s); 
