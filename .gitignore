@@ -4,11 +4,8 @@ out/
 
 # Ignores development broadcast logs
 !/broadcast
-/broadcast/*/31337/
+/broadcast/*/31337/https://github.com/0x73696d616f/swift-gate-contracts/blob/master/.gitignore
 /broadcast/**/dry-run/
-
-# Docs
-docs/
 
 # Dotenv file
 .env
