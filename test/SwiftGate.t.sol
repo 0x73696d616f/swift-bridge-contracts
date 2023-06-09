@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
+import "../common/Helpers.sol";
 import "../src/SwiftGate.sol";
 
 contract SwiftGateTest is Test {
@@ -24,9 +25,9 @@ contract SwiftGateTest is Test {
             governors.push(vm.addr(i_));
         }
         
-        swiftGateEthereum_ = new SwiftGate(ETHEREUM_CHAIN_ID, governors, MIN_SIGATURES);
+        swiftGateEthereum_ = Helpers._deploySwiftGate(ETHEREUM_CHAIN_ID, governors, MIN_SIGATURES, address(0), address(0));
         vm.label(address(swiftGateEthereum_), "swiftGateEthereum");
-        swiftGateOptimism_ = new SwiftGate(OPTIMISM_CHAIN_ID, governors, MIN_SIGATURES);
+        swiftGateOptimism_ = Helpers._deploySwiftGate(OPTIMISM_CHAIN_ID, governors, MIN_SIGATURES, address(0), address(0));
         vm.label(address(swiftGateOptimism_), "swiftGateOptimism");
 
         wrappedETH = address(new ERC20("Wrapped ETH", "WETH"));
@@ -34,11 +35,11 @@ contract SwiftGateTest is Test {
         wrappedETHOptimism = address(new ERC20("Wrapped ETH OPTIMISM", "WETHOP"));
         vm.label(wrappedETHOptimism, "wrappedETHOptimism");
 
-        _addWrappedToken(address(swiftGateOptimism_), OPTIMISM_CHAIN_ID, ETHEREUM_CHAIN_ID, address(wrappedETH), "Swift Gate Wrapped ETH", "SGWETH");
-        _addWrappedToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETHOptimism), "Swift Gate Wrapped OPETH", "SGWOPETH");
+        Helpers._addWrappedToken(address(swiftGateOptimism_), OPTIMISM_CHAIN_ID, ETHEREUM_CHAIN_ID, address(wrappedETH), "Swift Gate Wrapped ETH", "SGWETH", governorPKs);
+        Helpers._addWrappedToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETHOptimism), "Swift Gate Wrapped OPETH", "SGWOPETH", governorPKs);
     
-        _addDstToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETH));
-        _addDstToken(address(swiftGateOptimism_), OPTIMISM_CHAIN_ID, ETHEREUM_CHAIN_ID, address(wrappedETHOptimism));
+        Helpers._addDstToken(address(swiftGateEthereum_), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, address(wrappedETH), governorPKs);
+        Helpers._addDstToken(address(swiftGateOptimism_), OPTIMISM_CHAIN_ID, ETHEREUM_CHAIN_ID, address(wrappedETHOptimism), governorPKs);
     }
 
     function testSwiftSendFromEthereumToOptimism() public {
@@ -110,30 +111,6 @@ contract SwiftGateTest is Test {
 
     ////////////////////////////////// Helpers ///////////////////////////////////////////////////
 
-    function _addWrappedToken(
-        address swiftGate_, 
-        uint16 localChainId_, 
-        uint16 remoteChainId_,
-        address token_, 
-        string memory name_, 
-        string memory symbol_
-    ) internal {
-        bytes32 addWrappedTokenHash_ = keccak256(abi.encodePacked(localChainId_, remoteChainId_, token_, name_, symbol_));
-        SwiftGate.Signature[] memory signatures_ = _getSignatures(addWrappedTokenHash_);
-        SwiftGate(swiftGate_).addWrappedToken(remoteChainId_, token_, name_, symbol_, signatures_);
-    }
-
-    function _addDstToken(
-        address swiftGate_, 
-        uint16 localChainId_, 
-        uint16 remoteChainId_,
-        address token_
-    ) internal {
-        bytes32 addDstTokenHash_ = keccak256(abi.encodePacked(localChainId_, remoteChainId_, token_));
-        SwiftGate.Signature[] memory signatures_ = _getSignatures(addDstTokenHash_);
-        SwiftGate(swiftGate_).addDstToken(remoteChainId_, token_, signatures_);
-    }
-
     function _swiftReceive(
         address swiftGate_,
         SwiftGate.SwReceiveParams[] memory params_
@@ -151,7 +128,7 @@ contract SwiftGateTest is Test {
                 )
             );
         }
-        SwiftGate.Signature[] memory signatures_ = _getSignatures(messageHash_);
+        SwiftGate.Signature[] memory signatures_ = Helpers._getSignatures(messageHash_, governorPKs);
 
         uint256 initialGas_ = gasleft();
         SwiftGate(swiftGate_).swiftReceive(params_, signatures_);
@@ -178,13 +155,5 @@ contract SwiftGateTest is Test {
             assertEq(ERC20(token_).balanceOf(swiftGate_), initialSWGateBalance_ + amount_);
         else
             assertEq(ERC20(token_).balanceOf(sender_), initialSWGateBalance_);
-    }
-    
-    function _getSignatures(bytes32 messageHash_) internal view returns (SwiftGate.Signature[] memory signatures_ ) {
-        signatures_ = new SwiftGate.Signature[](MIN_SIGATURES);
-        for (uint i_; i_ < MIN_SIGATURES; i_++) {
-            (uint8 v_, bytes32 r_, bytes32 s_) = vm.sign(governorPKs[i_], messageHash_);
-            signatures_[i_] = SwiftGate.Signature(v_, r_, s_);
-        }
     }
 }

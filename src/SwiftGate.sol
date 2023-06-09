@@ -3,6 +3,8 @@ pragma solidity ^0.8.19;
 
 import { TokenFactory } from "./TokenFactory.sol";
 import { SwiftERC20 } from "./SwiftERC20.sol";
+import { IPool } from "lib/aave-v3-core/contracts/interfaces/IPool.sol";
+import { IRewardsController } from 'lib/aave-v3-periphery/contracts/rewards/interfaces/IRewardsController.sol';
 
 import "forge-std/Test.sol";
 
@@ -21,7 +23,9 @@ contract SwiftGate {
         uint16 dstChain;
     }
 
-    uint16 internal immutable _chainId;
+    uint16 internal _chainId;
+    IPool internal _aaveV3LendingPool;
+    IRewardsController internal _aaveV3RewardsController;
     mapping(address => bool) internal _governors;
     mapping(uint256 => uint256) internal _feeOfChainId;
     mapping(uint256 => uint256) internal _feeIfBatchedOfChainId;
@@ -48,11 +52,11 @@ contract SwiftGate {
     error UnsupportedTokenError(uint16 chainId, address token);
     error ZeroAddressError();
     error ZeroAmountError();
+    error ChainIdAlreadySetError();
 
     event SwiftSend(address token, uint256 amount, address receiver, uint16 dstChain, bool isSingle);
 
-    constructor(uint16 chainId_, address[] memory governors_, uint256 minSignatures_) {
-        _chainId = chainId_;
+    constructor(address[] memory governors_, uint256 minSignatures_) {
         _tokenFactory = new TokenFactory();
         _minSignatures = minSignatures_;
         for(uint i_; i_ < governors_.length;) {
@@ -63,6 +67,14 @@ contract SwiftGate {
             }
         }
     }
+
+    function initialize(uint16 chainId_, address aaveV3, address aaveV3RewardsController_) external {
+        if (_chainId != 0) revert ChainIdAlreadySetError();
+        _chainId = chainId_;
+        _aaveV3LendingPool = IPool(aaveV3);
+        _aaveV3RewardsController = IRewardsController(aaveV3RewardsController_);
+    }
+
  
     /** 
      * @notice Receives a batch of tokens, mints the wrapped versions and verifies the signatures.
@@ -144,6 +156,16 @@ contract SwiftGate {
         _dstTokens[chainId_][token_] = true;
     }
 
+    function depositToAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_) external {
+        _verifySignatures(keccak256(abi.encodePacked(_chainId, token_, amount_)), signatures_);
+        _aaveV3LendingPool.supply(token_, amount_, address(this), 0);
+    }
+
+    function withdrawFromAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_) external {
+        _verifySignatures(keccak256(abi.encodePacked(_chainId, token_, amount_)), signatures_);
+        _aaveV3LendingPool.withdraw(token_, amount_, address(this));
+    }
+
     ////////////////////////////// Setters ///////////////////////////////////////////////
 
     function setFeeOfChainId(uint16 chainId_, uint256 fee_, Signature[] calldata signatures_) external {
@@ -201,6 +223,18 @@ contract SwiftGate {
 
     function getRemoteTokenOf(address wrappedToken_) external view returns (address) {
         return _wrappedToRemoteTokens[wrappedToken_];
+    }
+
+    function isDstToken(uint16 chainId_, address token_) external view returns (bool) {
+        return _dstTokens[chainId_][token_];
+    }
+
+    function getMinSignatures() external view returns (uint256) {
+        return _minSignatures;
+    }
+
+    function getAaveV3LendingPool() external view returns (address) {
+        return address(_aaveV3LendingPool);
     }
 
     ////////////////////////////// Internal ///////////////////////////////////////////////
