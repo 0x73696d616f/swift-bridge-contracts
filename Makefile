@@ -21,3 +21,6 @@ deploy-anvil :;
 # Generates the docs to ./docs folder
 docs :; 
 	forge doc
+
+documentation :;
+	@forge doc --build	
