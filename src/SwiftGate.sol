@@ -181,12 +181,12 @@ contract SwiftGate {
     /** 
      *  @notice Claims rewards from aave (that will then be distributed to the governors)
      */
-    function withdrawFromAaveV3(address token_, address aToken_, uint256 amount_, Signature[] calldata signatures_, bytes32 salt_) external {
-        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, token_, amount_)), signatures_);
-        _aaveV3LendingPool.withdraw(token_, amount_, address(this));
+    function withdrawFromAaveV3(address token_, address aToken_, uint256 amount_, address receiver_, Signature[] calldata signatures_, bytes32 salt_) external {
+        _verifySignatures(keccak256(abi.encodePacked(salt_, _chainId, token_, amount_, receiver_)), signatures_);
+        _aaveV3LendingPool.withdraw(token_, amount_, receiver_);
         address[] memory aTokens_ = new address[](1);
         aTokens_[0] = aToken_;
-        _aaveV3RewardsController.claimAllRewardsToSelf(aTokens_);
+        _aaveV3RewardsController.claimAllRewards(aTokens_, receiver_);
     }
 
     ////////////////////////////// Setters ///////////////////////////////////////////////

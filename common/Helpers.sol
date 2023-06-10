@@ -59,12 +59,13 @@ library Helpers {
         address token_, 
         address aToken_,
         uint256 amount_, 
+        address receiver_,
         uint256[] memory governorPKs, 
         bytes32 salt_
     ) internal {
-        bytes32 depositToAaveV3Hash_ = keccak256(abi.encodePacked(salt_, chainId_, token_, amount_));
+        bytes32 depositToAaveV3Hash_ = keccak256(abi.encodePacked(salt_, chainId_, token_, amount_, receiver_));
         SwiftGate.Signature[] memory signatures_ = _getSignatures(depositToAaveV3Hash_, governorPKs);
-        SwiftGate(swiftGate_).withdrawFromAaveV3(token_, aToken_, amount_, signatures_, salt_);
+        SwiftGate(swiftGate_).withdrawFromAaveV3(token_, aToken_, amount_, receiver_, signatures_, salt_);
     }
 
     function _getSignatures(

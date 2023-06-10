@@ -120,7 +120,7 @@ contract SwiftGateTest is Test {
         
         vm.warp(block.timestamp + 30 days);
 
-        Helpers._withdrawFromAaveV3(address(swiftGateEthereum), ETHEREUM_CHAIN_ID, WETH_MAINNET, AWETH_MAINNET, amount_ + 1000, governorPKs, _increaseSalt());
+        Helpers._withdrawFromAaveV3(address(swiftGateEthereum), ETHEREUM_CHAIN_ID, WETH_MAINNET, AWETH_MAINNET, amount_ + 1000, address(swiftGateEthereum), governorPKs, _increaseSalt());
     }
 
     ////////////////////////////////// Helpers ///////////////////////////////////////////////////
