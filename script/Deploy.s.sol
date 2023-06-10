@@ -53,14 +53,15 @@ contract DeployScript is Script {
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         uint16 chainId_ = OPTIMISM_CHAIN_ID;
-        
-        _createWrappedTokens(chainId_);
+        uint16 remoteChainID_ = SCROLL_CHAIN_ID;
+
+        //_createWrappedTokens(chainId_);
 
         //address wrappedToken_ = SwiftGate(SWIFT_GATE).getWrappedToken(OPTIMISM_CHAIN_ID, 0xaB1Ef4C5390fE153550F490282fb95871078C52c);
         //console.log(MintableERC20(wrappedToken_).balanceOf(0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7));
 
         //_receive(0xaB1Ef4C5390fE153550F490282fb95871078C52c, 100, vm.addr(vm.envUint("PRIVATE_KEY_ANVIL")), remoteChainId_, chainId_, keccak256("1"));
-        //_send(0xaB1Ef4C5390fE153550F490282fb95871078C52c, 100, 0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7, remoteChainId_);
+        _send(OPTIMISM_MOCK_TOKEN, 100, 0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7, remoteChainId_);
         //Helpers._addWrappedToken(SWIFT_GATE, chainId_, remoteChainId_, 0xd36e5a69D4d002f52056201DcC836e29c077E408, "Wrapped SCROLL TOKEN", "WST", governorPKs, keccak256("3"));
         vm.stopBroadcast();
     }
