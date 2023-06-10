@@ -56,10 +56,17 @@ contract SwiftGate {
     error ChainIdAlreadySetError();
     error DuplicateSignatureError();
 
-    event SwiftSend(address token, uint256 amount, address receiver, uint16 dstChain, bool isSingle);
+    event SwiftSend(address token, address remoteToken_, uint256 amount, address receiver, uint16 dstChain, bool isSingle);
 
-    constructor(address[] memory governors_, uint256 minSignatures_) {
+    constructor() {
         _tokenFactory = new TokenFactory();
+    }
+
+    function initialize(uint16 chainId_, address aaveV3, address aaveV3RewardsController_, address[] memory governors_, uint256 minSignatures_) external {
+        if (_chainId != 0) revert ChainIdAlreadySetError();
+        _chainId = chainId_;
+        _aaveV3LendingPool = IPool(aaveV3);
+        _aaveV3RewardsController = IRewardsController(aaveV3RewardsController_);
         _minSignatures = minSignatures_;
         for(uint i_; i_ < governors_.length;) {
             _governors[governors_[i_]] = true;
@@ -68,13 +75,6 @@ contract SwiftGate {
                 ++i_;
             }
         }
-    }
-
-    function initialize(uint16 chainId_, address aaveV3, address aaveV3RewardsController_) external {
-        if (_chainId != 0) revert ChainIdAlreadySetError();
-        _chainId = chainId_;
-        _aaveV3LendingPool = IPool(aaveV3);
-        _aaveV3RewardsController = IRewardsController(aaveV3RewardsController_);
     }
 
  
@@ -141,7 +141,7 @@ contract SwiftGate {
             SwiftERC20(token_).transferFrom(msg.sender, address(this), amount_);
         }
 
-        emit SwiftSend(token_, amount_, receiver_, dstChain_, isSingle_);
+        emit SwiftSend(token_, remoteToken_, amount_, receiver_, dstChain_, isSingle_);
     }   
 
     /** 

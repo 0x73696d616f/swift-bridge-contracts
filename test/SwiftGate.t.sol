@@ -75,7 +75,7 @@ contract SwiftGateTest is Test {
 
     function testBatchSwiftSendFromEthereumToOptimismBackAndForth() public {
         uint256 amount_ = 100;
-        uint256 batchSize_ = 20;
+        uint256 batchSize_ = 25;
         SwiftGate.SwReceiveParams[] memory params_ = new SwiftGate.SwReceiveParams[](batchSize_);
 
         for (uint i_ = 1; i_ <= batchSize_; i_++) {

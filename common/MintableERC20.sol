@@ -4,7 +4,11 @@ pragma solidity ^0.8.19;
 import { ERC20 } from "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 contract MintableERC20 is ERC20 {
-    constructor() ERC20("MintableERC20", "MERC20") {
-        _mint(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, 1000e18);
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
+        _mint(0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7, 1000e18);
     }
+
+    function faucet() external {
+        _mint(msg.sender, 1_000_000);
+    } 
 }

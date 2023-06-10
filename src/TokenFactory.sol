@@ -21,7 +21,7 @@ contract TokenFactory {
     }
 
     function create(string memory name_, string memory symbol_, address remoteToken_) external onlySwiftGate returns (address proxy_) {
-        proxy_ = Clones.cloneDeterministic(_implementation, keccak256(abi.encodePacked(name_, symbol_)));
+        proxy_ = Clones.clone(_implementation);
         SwiftERC20(proxy_).initialize(name_, symbol_, msg.sender, remoteToken_);
     }
 

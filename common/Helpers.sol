@@ -80,8 +80,8 @@ library Helpers {
     }
 
     function _deploySwiftGate(uint16 chainId_, address[] memory governors_, uint256 minSignatures_, address aaveV3LendingPool_, address aaveV3RewardsController_) internal returns(SwiftGate) {
-        SwiftGate swiftGate_ = new SwiftGate{salt: keccak256("SwiftGate")}(governors_, minSignatures_);
-        swiftGate_.initialize(chainId_, aaveV3LendingPool_, aaveV3RewardsController_);
+        SwiftGate swiftGate_ = new SwiftGate(); // create2 not available in all chains
+        swiftGate_.initialize(chainId_, aaveV3LendingPool_, aaveV3RewardsController_, governors_, minSignatures_);
         return swiftGate_;
     }
 }

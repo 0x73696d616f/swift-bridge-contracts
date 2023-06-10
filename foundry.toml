@@ -31,6 +31,11 @@ goerli   = "${RPC_URL_GOERLI}"
 mainnet  = "${RPC_URL_MAINNET}"
 optimism = "${RPC_URL_OPTIMISM}"
 polygon  = "${RPC_URL_POLYGON}"
+optimism-goerli  = "${RPC_URL_OPTIMISM_GOERLI}"
+chiado = "${RPC_URL_CHIADO}"
+scroll = "${RPC_URL_SCROLL_ALPHA}"
+mantle = "${RPC_URL_MANTLE}"
+taiko = "${RPC_URL_TAIKO}"
 
 [profile.deploy.etherscan]
 arbitrum  = { key = "${ARBISCAN_KEY}",           url = "https://api.arbiscan.io/api" }
@@ -39,3 +44,9 @@ goerli    = { key = "${ETHERSCAN_KEY}",          url = "https://api-goerli.ether
 mainnet   = { key = "${ETHERSCAN_KEY}" }
 optimism  = { key = "${OPTIMISM_ETHERSCAN_KEY}", url = "https://api-optimistic.etherscan.io/api" }
 polygon   = { key = "${POLYGONSCAN_KEY}",        url = "https://api.polygonscan.com/api" }
+optimism-goerli   = { key = "${OPTIMISM_GOERLI_KEY}", url = "https://api-goerli-optimistic.etherscan.io/" }
+chiado   = { key = "${CHIADO_KEY}", url = "https://blockscout.com/gnosis/chiado/api" }
+scroll = { key = "${SCROLL_KEY}", url = "https://blockscout.scroll.io/api" }
+mantle = { key = "${MANTLE_KEY}", url = "https://explorer.testnet.mantle.xyz/api" }
+taiko = { key = "${TAIKO_KEY}", url = "https://explorer.test.taiko.xyz/api" }
+
