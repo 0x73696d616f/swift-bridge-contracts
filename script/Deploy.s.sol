@@ -27,7 +27,14 @@ contract DeployScript is Script {
     address public constant AAVEV3_REWARDS_CONTROLLER_SCROLL = 0xa76F05D0cdf599E0186dec880F2FA480fd0c5280;
     address public constant AAVEV3_L2POOL_SCROLL = 0x48914C788295b5db23aF2b5F0B3BE775C4eA9440;
     address public constant WETH_OPTIMISM = 0x4200000000000000000000000000000000000006;
-    address public constant SWIFT_GATE = 0x7374Da744DD2b54e50b933692f471B6395023B12;
+    address public constant SWIFT_GATE = 0xB84f07612F4bfEc42E042b6CDD26df496b3d397f;
+
+    address public constant OPTIMISM_MOCK_TOKEN = 0x2368B457E93DB89FB67f0dA1554af642F61fa0A8;
+    address public constant SCROLL_MOCK_TOKEN = 0x030A74336C10c3214602e515f3fbc604D4451691;
+    address public constant CHIADO_MOCK_TOKEN = 0x0B49058317F8d67ba09587a4d17e8C04907fa0B2;
+    address public constant MANTLE_MOCK_TOKEN = 0xb33200abe32eB66C4ca6F5a4F92a8D8cBA47DBaD;
+    address public constant TAIKO_MOCK_TOKEN = 0xc32cF0BF647259335a2151191CEDEDd1A22CaFd7;
+
     mapping (uint16=>string) public chainIdToName;
     
     function setUp() public {
@@ -45,10 +52,9 @@ contract DeployScript is Script {
 
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        uint16 chainId_ = MANTLE_CHAIN_ID;
-        //uint16 remoteChainId_ = SCROLL_CHAIN_ID;
-
-        _deploy(chainId_);
+        uint16 chainId_ = OPTIMISM_CHAIN_ID;
+        
+        _createWrappedTokens(chainId_);
 
         //address wrappedToken_ = SwiftGate(SWIFT_GATE).getWrappedToken(OPTIMISM_CHAIN_ID, 0xaB1Ef4C5390fE153550F490282fb95871078C52c);
         //console.log(MintableERC20(wrappedToken_).balanceOf(0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7));
@@ -99,8 +105,8 @@ contract DeployScript is Script {
             aaveV3RewardsController_ = AAVEV3_REWARDS_CONTROLLER_SCROLL;
         }
 
-        //SwiftGate swiftGate_ =  Helpers._deploySwiftGate(chainId_, governors, MIN_SIGATURES, aaveV3Pool_, aaveV3RewardsController_);
-        SwiftGate swiftGate_ = SwiftGate(0xB84f07612F4bfEc42E042b6CDD26df496b3d397f);
+        SwiftGate swiftGate_ =  Helpers._deploySwiftGate(chainId_, governors, MIN_SIGATURES, aaveV3Pool_, aaveV3RewardsController_);
+        //SwiftGate swiftGate_ = SwiftGate(0xB84f07612F4bfEc42E042b6CDD26df496b3d397f);
 
         // increase nonce to have different token addresses
         for (uint i_ = 1; i_ < chainId_;i_++) {
@@ -121,8 +127,11 @@ contract DeployScript is Script {
         if (chainId_ != TAIKO_CHAIN_ID) Helpers._addDstToken(address(swiftGate_), chainId_, TAIKO_CHAIN_ID, token_, governorPKs, keccak256("5"));
     }
 
-    function _deploySample() internal {
-        address token_ = address(new MintableERC20{salt: keccak256("hello1")}("hello1", "hello1"));
-        console.log(token_);
+    function _createWrappedTokens(uint16 chainId_) internal {
+        if (chainId_ != OPTIMISM_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, OPTIMISM_CHAIN_ID, OPTIMISM_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[OPTIMISM_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[OPTIMISM_CHAIN_ID])), governorPKs, keccak256("1"));
+        if (chainId_ != SCROLL_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, SCROLL_CHAIN_ID, SCROLL_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[SCROLL_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[SCROLL_CHAIN_ID])), governorPKs, keccak256("2"));
+        if (chainId_ != CHIADO_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, CHIADO_CHAIN_ID, CHIADO_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[CHIADO_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[CHIADO_CHAIN_ID])), governorPKs, keccak256("3"));
+        if (chainId_ != MANTLE_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, MANTLE_CHAIN_ID, MANTLE_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[MANTLE_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[MANTLE_CHAIN_ID])), governorPKs, keccak256("4"));
+        if (chainId_ != TAIKO_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, TAIKO_CHAIN_ID, TAIKO_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[TAIKO_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[TAIKO_CHAIN_ID])), governorPKs, keccak256("5"));
     }
 }
