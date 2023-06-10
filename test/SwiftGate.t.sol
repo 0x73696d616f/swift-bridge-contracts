@@ -7,6 +7,8 @@ import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "../common/Helpers.sol";
 import "../src/SwiftGate.sol";
 
+import { Strings } from "../lib/openzeppelin-contracts/contracts/utils/Strings.sol";
+
 contract SwiftGateTest is Test {
     address[] public governors;
     uint256[] public governorPKs;
@@ -109,7 +111,7 @@ contract SwiftGateTest is Test {
         console.log("swift batch receive size destination", batchSize_);
         _swiftReceive(address(swiftGateEthereum), params_);
     }
-
+    
     function testDepositAndWithdrawAaveV3() public {
         Helpers._addDstToken(address(swiftGateEthereum), ETHEREUM_CHAIN_ID, OPTIMISM_CHAIN_ID, WETH_MAINNET, governorPKs, _increaseSalt());
         address sender_ = makeAddr("sender");
@@ -123,13 +125,63 @@ contract SwiftGateTest is Test {
         Helpers._withdrawFromAaveV3(address(swiftGateEthereum), ETHEREUM_CHAIN_ID, WETH_MAINNET, AWETH_MAINNET, amount_ + 1000, address(swiftGateEthereum), governorPKs, _increaseSalt());
     }
 
+    function testConsoleDifferentBatchSizesFromEthereumToOptismism() public {
+        uint256 amount_ = 100;
+        uint256 batchSize_ = 50; 
+        SwiftGate.SwReceiveParams[] memory params_ = new SwiftGate.SwReceiveParams[](batchSize_);
+        for (uint i_ = 1; i_ <= batchSize_; i_++) {
+            address sender_ = makeAddr(string(abi.encodePacked("sender", vm.toString(i_))));
+            address receiver_ = makeAddr(string(abi.encodePacked("receiver", vm.toString(i_))));
+            params_[i_ - 1].token = address(wrappedETH);
+            params_[i_ - 1].receiver = receiver_;
+            params_[i_ - 1].amount = amount_;
+            params_[i_ - 1].srcChain = ETHEREUM_CHAIN_ID;
+            params_[i_ - 1].dstChain = OPTIMISM_CHAIN_ID;
+        
+            deal(wrappedETH, sender_, amount_);
+            _swiftSend(address(swiftGateEthereum), sender_, address(wrappedETH), amount_, receiver_, OPTIMISM_CHAIN_ID);
+        }
+
+        console.log("swift batch receive size", batchSize_);
+        uint256 gasSpent_ = _swiftReceive(address(swiftGateOptimism), params_);
+        string memory lineToWrite_ = string.concat(Strings.toString(batchSize_), " ,");
+        vm.writeLine("test/gasSpentIndividualCalls.csv", string.concat(lineToWrite_, Strings.toString(gasSpent_)));
+    }
+    
+    function testDifferentBatchSizesFromEthereumToOptismism() public {
+        uint256 amount_ = 100;
+        uint256 batchSizeMax_ = 75; 
+
+        for (uint batchSize_ = 1; batchSize_ <= batchSizeMax_; batchSize_++){
+            SwiftGate.SwReceiveParams[] memory params_ = new SwiftGate.SwReceiveParams[](batchSize_);
+            for (uint i_ = 1; i_ <= batchSize_; i_++) {
+                address sender_ = makeAddr(string(abi.encodePacked("sender", vm.toString(i_))));
+                address receiver_ = makeAddr(string(abi.encodePacked("receiver", vm.toString(i_))));
+                params_[i_ - 1].token = address(wrappedETH);
+                params_[i_ - 1].receiver = receiver_;
+                params_[i_ - 1].amount = amount_;
+                params_[i_ - 1].srcChain = ETHEREUM_CHAIN_ID;
+                params_[i_ - 1].dstChain = OPTIMISM_CHAIN_ID;
+            
+                deal(wrappedETH, sender_, amount_);
+                _swiftSend(address(swiftGateEthereum), sender_, address(wrappedETH), amount_, receiver_, OPTIMISM_CHAIN_ID);
+            }
+
+            console.log("swift batch receive size", batchSize_);
+            uint256 gasSpent_ = _swiftReceive(address(swiftGateOptimism), params_);
+            string memory lineToWrite_ = string.concat(Strings.toString(batchSize_), " ,");
+            vm.writeLine("test/gasSpent.csv", string.concat(lineToWrite_, Strings.toString(gasSpent_)));
+        }
+    }
     ////////////////////////////////// Helpers ///////////////////////////////////////////////////
 
     function _swiftReceive(
         address swiftGate_,
         SwiftGate.SwReceiveParams[] memory params_
-    ) internal {
+    ) internal returns(uint256 gasSpent_) {
         bytes32 messageHash_ = _increaseSalt();
+        uint256[] memory initialReceiverBalance= new uint256[](params_.length);
+
         for (uint i_ = 0; i_ < params_.length; i_++) {
             messageHash_ = keccak256(
                 abi.encodePacked(
@@ -141,17 +193,21 @@ contract SwiftGateTest is Test {
                     params_[i_].dstChain
                 )
             );
+            ERC20 wrappedToken_ = ERC20(SwiftGate(swiftGate_).getWrappedToken(params_[i_].srcChain, params_[i_].token));
+            if (address(wrappedToken_) != address(0))
+                initialReceiverBalance[i_] = wrappedToken_.balanceOf(params_[i_].receiver);
+            else
+                initialReceiverBalance[i_] = ERC20(params_[i_].token).balanceOf(params_[i_].receiver);
         }
         SwiftGate.Signature[] memory signatures_ = Helpers._getSignatures(messageHash_, governorPKs);
 
         uint256 initialGas_ = gasleft();
         SwiftGate(swiftGate_).swiftReceive(params_, signatures_, salt);
-        console.log("swiftReceive gas cost", initialGas_ - gasleft());
-
+        console.log("swiftReceive gas cost", gasSpent_ = initialGas_ - gasleft());
         for (uint i_; i_ < params_.length; i_++) {
             ERC20 wrappedToken_ = ERC20(SwiftGate(swiftGate_).getWrappedToken(params_[i_].srcChain, params_[i_].token));
             if (address(wrappedToken_) != address(0))
-                assertEq(wrappedToken_.balanceOf(params_[i_].receiver), params_[i_].amount);
+                assertEq(wrappedToken_.balanceOf(params_[i_].receiver), initialReceiverBalance[i_] + params_[i_].amount);
             else
                 assertEq(ERC20(params_[i_].token).balanceOf(params_[i_].receiver), params_[i_].amount);
         }
