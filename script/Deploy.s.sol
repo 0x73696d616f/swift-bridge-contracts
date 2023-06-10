@@ -28,6 +28,8 @@ contract DeployScript is Script {
     address public constant AAVEV3_L2POOL_SCROLL = 0x48914C788295b5db23aF2b5F0B3BE775C4eA9440;
     address public constant WETH_OPTIMISM = 0x4200000000000000000000000000000000000006;
     address public constant SWIFT_GATE = 0xB84f07612F4bfEc42E042b6CDD26df496b3d397f;
+    address public constant AAVE_SCROLL_DAI = 0x7984E363c38b590bB4CA35aEd5133Ef2c6619C40;
+    address public constant AAVE_OPTIMISM_DAI = 0xD9662ae38fB577a3F6843b6b8EB5af3410889f3A;
 
     address public constant OPTIMISM_MOCK_TOKEN = 0x2368B457E93DB89FB67f0dA1554af642F61fa0A8;
     address public constant SCROLL_MOCK_TOKEN = 0x030A74336C10c3214602e515f3fbc604D4451691;
@@ -38,6 +40,7 @@ contract DeployScript is Script {
     address public constant WRAPPED_SCROLL_TOKEN_ON_CHIADO = 0x407566726c00f97b093dCa55Fa9e87934Ed51bBd;
 
     mapping (uint16=>string) public chainIdToName;
+    mapping (address=>address) public tokenToAToken;
     
     function setUp() public {
         for (uint i_ = 11; i_ < MIN_SIGATURES + 11; i_++) {
@@ -50,14 +53,20 @@ contract DeployScript is Script {
         chainIdToName[CHIADO_CHAIN_ID] = "CHIADO";
         chainIdToName[MANTLE_CHAIN_ID] = "MANTLE";
         chainIdToName[TAIKO_CHAIN_ID] = "TAIKO";
+        tokenToAToken[AAVE_SCROLL_DAI] = 0x99Cb50E6bE36C8096e6731ED7738d93090B710DD;
+        tokenToAToken[AAVE_OPTIMISM_DAI] = 0x844f622596D061B8AeB0bf265bDfbdafd5Fb7856;
     }
 
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        uint16 chainId_ = OPTIMISM_CHAIN_ID;
-        uint16 remoteChainId_ = CHIADO_CHAIN_ID;
+        uint16 chainId_ = TAIKO_CHAIN_ID;
+        uint16 remoteChainId_ = MANTLE_CHAIN_ID;
 
-        _addDstToken(chainId_, WETH_OPTIMISM, SWIFT_GATE);
+        //_depositToAaveV3(chainId_, AAVE_OPTIMISM_DAI, 90);
+        //_withdrawFromAaveV3(chainId_, AAVE_OPTIMISM_DAI, 10);
+
+        //WETH_OPTIMISM.call{value: 10000}("");
+        //_addDstToken(chainId_, AAVE_OPTIMISM_DAI, SWIFT_GATE);
 
         //_createWrappedTokens(chainId_);
 
@@ -65,8 +74,8 @@ contract DeployScript is Script {
         //console.log(MintableERC20(wrappedToken_).balanceOf(0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7));
 
         //_receive(SCROLL_MOCK_TOKEN, 100, 0xbEf4683c8E272971DcDF94B0AbCC55292329bDD4, remoteChainId_, chainId_, keccak256("1"));
-        //_send(OPTIMISM_MOCK_TOKEN, 100, 0xbEf4683c8E272971DcDF94B0AbCC55292329bDD4, remoteChainId_);
-        //Helpers._addWrappedToken(SWIFT_GATE, chainId_, remoteChainId_, 0xd36e5a69D4d002f52056201DcC836e29c077E408, "Wrapped SCROLL TOKEN", "WST", governorPKs, keccak256("3"));
+        _send(TAIKO_MOCK_TOKEN, 100, 0xbEf4683c8E272971DcDF94B0AbCC55292329bDD4, remoteChainId_);
+        //Helpers._addWrappedToken(SWIFT_GATE, chainId_, remoteChainId_, AAVE_OPTIMISM_DAI, "Wrapped OPTIMISM AAVE DAI", "WOPAD", governorPKs, keccak256("3"));
         vm.stopBroadcast();
     }
 
@@ -134,6 +143,10 @@ contract DeployScript is Script {
 
     function _depositToAaveV3(uint16 chainId_, address token_, uint256 amount_) internal {
         Helpers._depositToAaveV3(SWIFT_GATE, chainId_, token_, amount_, governorPKs, bytes32(block.timestamp));
+    }
+
+    function _withdrawFromAaveV3(uint16 chainId_, address token_, uint256 amount_) internal {
+        Helpers._withdrawFromAaveV3(SWIFT_GATE, chainId_, token_, tokenToAToken[token_], amount_, SWIFT_GATE, governorPKs, bytes32(block.timestamp));
     }
 
     function _addDstToken(uint16 chainId_, address token_, address swiftGate_) internal {
