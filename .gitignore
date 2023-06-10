@@ -1,15 +1,7 @@
 # Compiler files
 cache/
 out/
-node_modules/
-
-# Ignores development broadcast logs
-!/broadcast
-/broadcast/*/31337/https://github.com/0x73696d616f/swift-gate-contracts/blob/master/.gitignore
-/broadcast/**/dry-run/
+broadcast/
 
 # Dotenv file
 .env
-
-# Hardhat
-package-lock.json
