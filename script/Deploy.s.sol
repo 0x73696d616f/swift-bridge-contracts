@@ -35,6 +35,8 @@ contract DeployScript is Script {
     address public constant MANTLE_MOCK_TOKEN = 0xb33200abe32eB66C4ca6F5a4F92a8D8cBA47DBaD;
     address public constant TAIKO_MOCK_TOKEN = 0xc32cF0BF647259335a2151191CEDEDd1A22CaFd7;
 
+    address public constant WRAPPED_SCROLL_TOKEN_ON_CHIADO = 0x407566726c00f97b093dCa55Fa9e87934Ed51bBd;
+
     mapping (uint16=>string) public chainIdToName;
     
     function setUp() public {
@@ -53,15 +55,17 @@ contract DeployScript is Script {
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         uint16 chainId_ = OPTIMISM_CHAIN_ID;
-        uint16 remoteChainID_ = SCROLL_CHAIN_ID;
+        uint16 remoteChainId_ = CHIADO_CHAIN_ID;
+
+        _addDstToken(chainId_, WETH_OPTIMISM, SWIFT_GATE);
 
         //_createWrappedTokens(chainId_);
 
         //address wrappedToken_ = SwiftGate(SWIFT_GATE).getWrappedToken(OPTIMISM_CHAIN_ID, 0xaB1Ef4C5390fE153550F490282fb95871078C52c);
         //console.log(MintableERC20(wrappedToken_).balanceOf(0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7));
 
-        //_receive(0xaB1Ef4C5390fE153550F490282fb95871078C52c, 100, vm.addr(vm.envUint("PRIVATE_KEY_ANVIL")), remoteChainId_, chainId_, keccak256("1"));
-        _send(OPTIMISM_MOCK_TOKEN, 100, 0x81B14fEa9FBf83937b97bA0F7Ef8383Cd10236F7, remoteChainId_);
+        //_receive(SCROLL_MOCK_TOKEN, 100, 0xbEf4683c8E272971DcDF94B0AbCC55292329bDD4, remoteChainId_, chainId_, keccak256("1"));
+        //_send(OPTIMISM_MOCK_TOKEN, 100, 0xbEf4683c8E272971DcDF94B0AbCC55292329bDD4, remoteChainId_);
         //Helpers._addWrappedToken(SWIFT_GATE, chainId_, remoteChainId_, 0xd36e5a69D4d002f52056201DcC836e29c077E408, "Wrapped SCROLL TOKEN", "WST", governorPKs, keccak256("3"));
         vm.stopBroadcast();
     }
@@ -88,9 +92,6 @@ contract DeployScript is Script {
                 )
             );
         }
-
-        console.log("salt", vm.toString(salt_));
-        console.log("messageHash", vm.toString(messageHash_));
 
         SwiftGate(SWIFT_GATE).swiftReceive(params_, Helpers._getSignatures(messageHash_, governorPKs), salt_);
     }
@@ -120,12 +121,7 @@ contract DeployScript is Script {
 
         console.log("swiftGate", address(swiftGate_));
         console.log("token", token_);
-        
-        if (chainId_ != OPTIMISM_CHAIN_ID) Helpers._addDstToken(address(swiftGate_), chainId_, OPTIMISM_CHAIN_ID, token_, governorPKs, keccak256("1"));
-        if (chainId_ != SCROLL_CHAIN_ID) Helpers._addDstToken(address(swiftGate_), chainId_, SCROLL_CHAIN_ID, token_, governorPKs, keccak256("2"));
-        if (chainId_ != CHIADO_CHAIN_ID) Helpers._addDstToken(address(swiftGate_), chainId_, CHIADO_CHAIN_ID, token_, governorPKs, keccak256("3"));
-        if (chainId_ != MANTLE_CHAIN_ID) Helpers._addDstToken(address(swiftGate_), chainId_, MANTLE_CHAIN_ID, token_, governorPKs, keccak256("4"));
-        if (chainId_ != TAIKO_CHAIN_ID) Helpers._addDstToken(address(swiftGate_), chainId_, TAIKO_CHAIN_ID, token_, governorPKs, keccak256("5"));
+        _addDstToken(chainId_, token_, address(swiftGate_));
     }
 
     function _createWrappedTokens(uint16 chainId_) internal {
@@ -134,5 +130,17 @@ contract DeployScript is Script {
         if (chainId_ != CHIADO_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, CHIADO_CHAIN_ID, CHIADO_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[CHIADO_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[CHIADO_CHAIN_ID])), governorPKs, keccak256("3"));
         if (chainId_ != MANTLE_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, MANTLE_CHAIN_ID, MANTLE_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[MANTLE_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[MANTLE_CHAIN_ID])), governorPKs, keccak256("4"));
         if (chainId_ != TAIKO_CHAIN_ID) Helpers._addWrappedToken(SWIFT_GATE, chainId_, TAIKO_CHAIN_ID, TAIKO_MOCK_TOKEN, string(abi.encodePacked("Wrapped SwiftGate Token ", chainIdToName[TAIKO_CHAIN_ID])), string(abi.encodePacked("WSWT ", chainIdToName[TAIKO_CHAIN_ID])), governorPKs, keccak256("5"));
+    }
+
+    function _depositToAaveV3(uint16 chainId_, address token_, uint256 amount_) internal {
+        Helpers._depositToAaveV3(SWIFT_GATE, chainId_, token_, amount_, governorPKs, bytes32(block.timestamp));
+    }
+
+    function _addDstToken(uint16 chainId_, address token_, address swiftGate_) internal {
+        if (chainId_ != OPTIMISM_CHAIN_ID) Helpers._addDstToken(swiftGate_, chainId_, OPTIMISM_CHAIN_ID, token_, governorPKs, keccak256("1"));
+        if (chainId_ != SCROLL_CHAIN_ID) Helpers._addDstToken(swiftGate_, chainId_, SCROLL_CHAIN_ID, token_, governorPKs, keccak256("2"));
+        if (chainId_ != CHIADO_CHAIN_ID) Helpers._addDstToken(swiftGate_, chainId_, CHIADO_CHAIN_ID, token_, governorPKs, keccak256("3"));
+        if (chainId_ != MANTLE_CHAIN_ID) Helpers._addDstToken(swiftGate_, chainId_, MANTLE_CHAIN_ID, token_, governorPKs, keccak256("4"));
+        if (chainId_ != TAIKO_CHAIN_ID) Helpers._addDstToken(swiftGate_, chainId_, TAIKO_CHAIN_ID, token_, governorPKs, keccak256("5"));
     }
 }
