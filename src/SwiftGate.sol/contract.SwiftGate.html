@@ -149,27 +149,34 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="swiftgate"><a class="header" href="#swiftgate">SwiftGate</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/4db881e39575c3164ca373fde322a65c1942318a/src/SwiftGate.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/70f4cd7b72d3d44b62198fb323b69f6afb3932ab/src/SwiftGate.sol">Git Source</a></p>
 <h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
 <h3 id="_chainid"><a class="header" href="#_chainid">_chainId</a></h3>
+<p>chain id of swift gate on this chain</p>
 <pre><code class="language-solidity">uint16 internal _chainId;
 </code></pre>
 <h3 id="_aavev3lendingpool"><a class="header" href="#_aavev3lendingpool">_aaveV3LendingPool</a></h3>
+<p>Aave v3 lending pool</p>
 <pre><code class="language-solidity">IPool internal _aaveV3LendingPool;
 </code></pre>
 <h3 id="_aavev3rewardscontroller"><a class="header" href="#_aavev3rewardscontroller">_aaveV3RewardsController</a></h3>
+<p>Aave v3 rewards controller</p>
 <pre><code class="language-solidity">IRewardsController internal _aaveV3RewardsController;
 </code></pre>
 <h3 id="_governors"><a class="header" href="#_governors">_governors</a></h3>
+<p>Mapping of governor address =&gt; is governor</p>
 <pre><code class="language-solidity">mapping(address =&gt; bool) internal _governors;
 </code></pre>
 <h3 id="_feeofchainid"><a class="header" href="#_feeofchainid">_feeOfChainId</a></h3>
+<p>Mapping of chainId =&gt; fee</p>
 <pre><code class="language-solidity">mapping(uint256 =&gt; uint256) internal _feeOfChainId;
 </code></pre>
 <h3 id="_feeifbatchedofchainid"><a class="header" href="#_feeifbatchedofchainid">_feeIfBatchedOfChainId</a></h3>
+<p>Mapping of chainId =&gt; fee if batched</p>
 <pre><code class="language-solidity">mapping(uint256 =&gt; uint256) internal _feeIfBatchedOfChainId;
 </code></pre>
 <h3 id="_signedmessages"><a class="header" href="#_signedmessages">_signedMessages</a></h3>
+<p>Mapping of chainId =&gt; is chain supported</p>
 <pre><code class="language-solidity">mapping(bytes32 =&gt; bool) internal _signedMessages;
 </code></pre>
 <h3 id="_remotetowrappedtokens"><a class="header" href="#_remotetowrappedtokens">_remoteToWrappedTokens</a></h3>
@@ -194,9 +201,11 @@
 </code></pre>
 <h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
 <h3 id="constructor"><a class="header" href="#constructor">constructor</a></h3>
+<p>creates the TokenFactory which is owner by this contract - swift gate</p>
 <pre><code class="language-solidity">constructor();
 </code></pre>
 <h3 id="initialize"><a class="header" href="#initialize">initialize</a></h3>
+<p>initializes the swift gate contract</p>
 <pre><code class="language-solidity">function initialize(
     uint16 chainId_,
     address aaveV3,
@@ -205,32 +214,41 @@
     uint256 minSignatures_
 ) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id of the swift gate contract</td></tr>
+<tr><td><code>aaveV3</code></td><td><code>address</code></td><td>aave v3 lending pool address</td></tr>
+<tr><td><code>aaveV3RewardsController_</code></td><td><code>address</code></td><td>aave v3 rewards controller address</td></tr>
+<tr><td><code>governors_</code></td><td><code>address[]</code></td><td>array of governor addresses</td></tr>
+<tr><td><code>minSignatures_</code></td><td><code>uint256</code></td><td>minimum number of signatures to validate messages</td></tr>
+</tbody></table>
+</div>
 <h3 id="swiftreceive"><a class="header" href="#swiftreceive">swiftReceive</a></h3>
-<p>Receives a batch of tokens, mints the wrapped versions and verifies the signatures.</p>
+<p>receives a batch of tokens, mints the wrapped versions and verifies the signatures.</p>
 <pre><code class="language-solidity">function swiftReceive(SwReceiveParams[] calldata params_, Signature[] calldata signatures_, bytes32 salt_) external;
 </code></pre>
 <p><strong>Parameters</strong></p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>params_</code></td><td><code>SwReceiveParams[]</code></td><td>Struct with the parameters to sned across bridges - includes token, amount, receiver, srcChain, dstChain</td></tr>
-<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>Array of signatures from the governors (message hash signed by governors )</td></tr>
-<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>Message Hash</td></tr>
+<tr><td><code>params_</code></td><td><code>SwReceiveParams[]</code></td><td>struct with the parameters to sned across bridges - includes token, amount, receiver, srcChain, dstChain</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
 </tbody></table>
 </div>
 <h3 id="swiftsend"><a class="header" href="#swiftsend">swiftSend</a></h3>
-<p>Sends a token to another chain.</p>
+<p>sends a token to another chain.</p>
 <pre><code class="language-solidity">function swiftSend(address token_, uint256 amount_, address receiver_, uint16 dstChain_, bool isSingle_) external;
 </code></pre>
 <p><strong>Parameters</strong></p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>token_</code></td><td><code>address</code></td><td>The token to send.</td></tr>
-<tr><td><code>amount_</code></td><td><code>uint256</code></td><td>The amount of tokens to send.</td></tr>
-<tr><td><code>receiver_</code></td><td><code>address</code></td><td>The receiver of the tokens.</td></tr>
-<tr><td><code>dstChain_</code></td><td><code>uint16</code></td><td>The destination chain.</td></tr>
-<tr><td><code>isSingle_</code></td><td><code>bool</code></td><td>Whether the token is to be batched with other tokens to save gas or not.</td></tr>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>the token to send.</td></tr>
+<tr><td><code>amount_</code></td><td><code>uint256</code></td><td>the amount of tokens to send.</td></tr>
+<tr><td><code>receiver_</code></td><td><code>address</code></td><td>the receiver of the tokens.</td></tr>
+<tr><td><code>dstChain_</code></td><td><code>uint16</code></td><td>the destination chain.</td></tr>
+<tr><td><code>isSingle_</code></td><td><code>bool</code></td><td>whether the token is to be batched with other tokens to save gas or not.</td></tr>
 </tbody></table>
 </div>
 <h3 id="addwrappedtoken"><a class="header" href="#addwrappedtoken">addWrappedToken</a></h3>
-<p>Adds a wrapped token to the respective mapping so it can be used across chains</p>
+<p>adds a wrapped token to the respective mapping so it can be used across chains</p>
 <pre><code class="language-solidity">function addWrappedToken(
     uint16 chainId_,
     address token_,
@@ -240,16 +258,42 @@
     bytes32 salt_
 ) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id of the wrapped token</td></tr>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>token that is being wrapped</td></tr>
+<tr><td><code>name_</code></td><td><code>string</code></td><td>name of the wrapped token</td></tr>
+<tr><td><code>symbol_</code></td><td><code>string</code></td><td>symbol of the wrapped token</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="adddsttoken"><a class="header" href="#adddsttoken">addDstToken</a></h3>
-<p>Adds a token to the dstTokens mapping (verified with the signatures)</p>
+<p>Adds a token to the dstTokens mapping (verified with the signatures). Signals that a token can be bridged to another chain</p>
 <pre><code class="language-solidity">function addDstToken(uint16 chainId_, address token_, Signature[] calldata signatures_, bytes32 salt_) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id of the token</td></tr>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>token that is being added</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="deposittoaavev3"><a class="header" href="#deposittoaavev3">depositToAaveV3</a></h3>
-<p>Approves a given token so it can be handled in aave lending pool</p>
+<p>deposits a given token in the aave lending pool</p>
 <pre><code class="language-solidity">function depositToAaveV3(address token_, uint256 amount_, Signature[] calldata signatures_, bytes32 salt_) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>token to be deposited</td></tr>
+<tr><td><code>amount_</code></td><td><code>uint256</code></td><td>amount to be deposited</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="withdrawfromaavev3"><a class="header" href="#withdrawfromaavev3">withdrawFromAaveV3</a></h3>
-<p>Claims rewards from aave (that will then be distributed to the governors)</p>
+<p>withdraws tokens and rewards from aave to claim the yield for the governors</p>
 <pre><code class="language-solidity">function withdrawFromAaveV3(
     address token_,
     address aToken_,
@@ -259,10 +303,30 @@
     bytes32 salt_
 ) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>token to be withdrawn</td></tr>
+<tr><td><code>aToken_</code></td><td><code>address</code></td><td>corresponding aave token. Required for the rewards controller</td></tr>
+<tr><td><code>amount_</code></td><td><code>uint256</code></td><td>amount to be withdrawn</td></tr>
+<tr><td><code>receiver_</code></td><td><code>address</code></td><td>address to receive the tokens</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="setfeeofchainid"><a class="header" href="#setfeeofchainid">setFeeOfChainId</a></h3>
+<p>sets the fee for a given chain id</p>
 <pre><code class="language-solidity">function setFeeOfChainId(uint16 chainId_, uint256 fee_, Signature[] calldata signatures_, bytes32 salt_) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id to set the fee for</td></tr>
+<tr><td><code>fee_</code></td><td><code>uint256</code></td><td>fee to be set</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="setfeeifbatchedofchainid"><a class="header" href="#setfeeifbatchedofchainid">setFeeIfBatchedOfChainId</a></h3>
+<p>sets the fee if the swiftSend call is batched for a given chain id. Much cheaper than single fee</p>
 <pre><code class="language-solidity">function setFeeIfBatchedOfChainId(
     uint16 chainId_,
     uint256 feeIfBatched_,
@@ -270,7 +334,16 @@
     bytes32 salt_
 ) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id to set the fee for</td></tr>
+<tr><td><code>feeIfBatched_</code></td><td><code>uint256</code></td><td>fee to be set</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="setgovernors"><a class="header" href="#setgovernors">setGovernors</a></h3>
+<p>sets the governors of the swift gate. Useful if governors are not working well and need to be replaced</p>
 <pre><code class="language-solidity">function setGovernors(
     address[] calldata governors_,
     bool[] calldata set_,
@@ -278,37 +351,120 @@
     bytes32 salt_
 ) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>governors_</code></td><td><code>address[]</code></td><td>array of governors to be set</td></tr>
+<tr><td><code>set_</code></td><td><code>bool[]</code></td><td>array of booleans to set the governors to true or false</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="setminsignatures"><a class="header" href="#setminsignatures">setMinSignatures</a></h3>
+<p>sets the min signatures required to execute calls to the swift gate</p>
 <pre><code class="language-solidity">function setMinSignatures(uint256 minSignatures_, Signature[] calldata signatures_, bytes32 salt_) external;
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>minSignatures_</code></td><td><code>uint256</code></td><td>min signatures to be set</td></tr>
+<tr><td><code>signatures_</code></td><td><code>Signature[]</code></td><td>array of signatures from the governors (message hash signed by governors )</td></tr>
+<tr><td><code>salt_</code></td><td><code>bytes32</code></td><td>salt used to enable signing the same message more than once</td></tr>
+</tbody></table>
+</div>
 <h3 id="getfeeofchainid"><a class="header" href="#getfeeofchainid">getFeeOfChainId</a></h3>
+<p>gets the single swift send fee of to a given chain id</p>
 <pre><code class="language-solidity">function getFeeOfChainId(uint16 chainId_) external view returns (uint256);
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id to get the fee for</td></tr>
+</tbody></table>
+</div>
 <h3 id="getfeeifbatchedofchainid"><a class="header" href="#getfeeifbatchedofchainid">getFeeIfBatchedOfChainId</a></h3>
+<p>gets the batched swift send fee of to a given chain id</p>
 <pre><code class="language-solidity">function getFeeIfBatchedOfChainId(uint16 chainId_) external view returns (uint256);
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id to get the fee for</td></tr>
+</tbody></table>
+</div>
 <h3 id="getchainid"><a class="header" href="#getchainid">getChainId</a></h3>
+<p>gets the chain id of the swift gate</p>
 <pre><code class="language-solidity">function getChainId() external view returns (uint256);
 </code></pre>
 <h3 id="isgovernor"><a class="header" href="#isgovernor">isGovernor</a></h3>
+<p>checks if an account is a governor</p>
 <pre><code class="language-solidity">function isGovernor(address account_) external view returns (bool);
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>account_</code></td><td><code>address</code></td><td>account to check</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>&lt;none&gt;</code></td><td><code>bool</code></td><td>true if the account is a governor, false otherwise</td></tr>
+</tbody></table>
+</div>
 <h3 id="getwrappedtoken"><a class="header" href="#getwrappedtoken">getWrappedToken</a></h3>
+<p>gets the wrapped token of a given chain id and token address</p>
 <pre><code class="language-solidity">function getWrappedToken(uint16 chainId_, address token_) external view returns (address);
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id to get the wrapped token for</td></tr>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>token to get the wrapped token for</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>&lt;none&gt;</code></td><td><code>address</code></td><td>wrapped token address</td></tr>
+</tbody></table>
+</div>
 <h3 id="gettokenfactory"><a class="header" href="#gettokenfactory">getTokenFactory</a></h3>
+<p>gets the token factory address that creates the wrapped tokens</p>
 <pre><code class="language-solidity">function getTokenFactory() external view returns (address);
 </code></pre>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>&lt;none&gt;</code></td><td><code>address</code></td><td>token factory address</td></tr>
+</tbody></table>
+</div>
 <h3 id="getremotetokenof"><a class="header" href="#getremotetokenof">getRemoteTokenOf</a></h3>
+<p>gets the remote token of a given wrapped token address</p>
 <pre><code class="language-solidity">function getRemoteTokenOf(address wrappedToken_) external view returns (address);
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>wrappedToken_</code></td><td><code>address</code></td><td>wrapped token to get the remote token for</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>&lt;none&gt;</code></td><td><code>address</code></td><td>remote token address</td></tr>
+</tbody></table>
+</div>
 <h3 id="isdsttoken"><a class="header" href="#isdsttoken">isDstToken</a></h3>
+<p>checks if a token is allowed to be bridged to a destination chain id</p>
 <pre><code class="language-solidity">function isDstToken(uint16 chainId_, address token_) external view returns (bool);
 </code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>chainId_</code></td><td><code>uint16</code></td><td>chain id to check</td></tr>
+<tr><td><code>token_</code></td><td><code>address</code></td><td>token to check</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>&lt;none&gt;</code></td><td><code>bool</code></td><td>true if the token is allowed to be bridged, false otherwise</td></tr>
+</tbody></table>
+</div>
 <h3 id="getminsignatures"><a class="header" href="#getminsignatures">getMinSignatures</a></h3>
+<p>gets the min signatures required to execute calls to the swift gate</p>
 <pre><code class="language-solidity">function getMinSignatures() external view returns (uint256);
 </code></pre>
 <h3 id="getaavev3lendingpool"><a class="header" href="#getaavev3lendingpool">getAaveV3LendingPool</a></h3>
+<p>gets the aave v3 lending pool address</p>
 <pre><code class="language-solidity">function getAaveV3LendingPool() external view returns (address);
 </code></pre>
 <h3 id="_verifysignatures"><a class="header" href="#_verifysignatures">_verifySignatures</a></h3>
@@ -316,38 +472,48 @@
 </code></pre>
 <h2 id="events"><a class="header" href="#events">Events</a></h2>
 <h3 id="swiftsend-1"><a class="header" href="#swiftsend-1">SwiftSend</a></h3>
+<p>emitted when an account calls swiftSend and bridges to the destination chain</p>
 <pre><code class="language-solidity">event SwiftSend(address token, address remoteToken_, uint256 amount, address receiver, uint16 dstChain, bool isSingle);
 </code></pre>
 <h2 id="errors"><a class="header" href="#errors">Errors</a></h2>
 <h3 id="lengthmismatcherror"><a class="header" href="#lengthmismatcherror">LengthMismatchError</a></h3>
+<p>triggered when the lengths of the array arguments don't match</p>
 <pre><code class="language-solidity">error LengthMismatchError();
 </code></pre>
 <h3 id="notenoughsignatureserror"><a class="header" href="#notenoughsignatureserror">NotEnoughSignaturesError</a></h3>
+<p>triggered when the number of signatures is less than the minimum</p>
 <pre><code class="language-solidity">error NotEnoughSignaturesError();
 </code></pre>
 <h3 id="invalidsignatureerror"><a class="header" href="#invalidsignatureerror">InvalidSignatureError</a></h3>
+<p>triggered when the signature is invalid</p>
 <pre><code class="language-solidity">error InvalidSignatureError();
 </code></pre>
 <h3 id="wrontdstchainerror"><a class="header" href="#wrontdstchainerror">WrontDstChainError</a></h3>
 <pre><code class="language-solidity">error WrontDstChainError(uint256 chainId);
 </code></pre>
 <h3 id="unsupportedtokenerror"><a class="header" href="#unsupportedtokenerror">UnsupportedTokenError</a></h3>
+<p>triggered when the token is not supported on a certain destination chain</p>
 <pre><code class="language-solidity">error UnsupportedTokenError(uint16 chainId, address token);
 </code></pre>
 <h3 id="zeroaddresserror"><a class="header" href="#zeroaddresserror">ZeroAddressError</a></h3>
+<p>triggered on a zero address argument</p>
 <pre><code class="language-solidity">error ZeroAddressError();
 </code></pre>
 <h3 id="zeroamounterror"><a class="header" href="#zeroamounterror">ZeroAmountError</a></h3>
+<p>triggered when the amount is zero</p>
 <pre><code class="language-solidity">error ZeroAmountError();
 </code></pre>
 <h3 id="chainidalreadyseterror"><a class="header" href="#chainidalreadyseterror">ChainIdAlreadySetError</a></h3>
+<p>triggered when the chain id is already set. Prevents reinitialization</p>
 <pre><code class="language-solidity">error ChainIdAlreadySetError();
 </code></pre>
 <h3 id="duplicatesignatureerror"><a class="header" href="#duplicatesignatureerror">DuplicateSignatureError</a></h3>
+<p>triggered when the signature is a duplicate. Prevents message replay</p>
 <pre><code class="language-solidity">error DuplicateSignatureError();
 </code></pre>
 <h2 id="structs"><a class="header" href="#structs">Structs</a></h2>
 <h3 id="signature"><a class="header" href="#signature">Signature</a></h3>
+<p>Struct to hold signature data</p>
 <pre><code class="language-solidity">struct Signature {
     uint8 v;
     bytes32 r;
@@ -355,6 +521,7 @@
 }
 </code></pre>
 <h3 id="swreceiveparams"><a class="header" href="#swreceiveparams">SwReceiveParams</a></h3>
+<p>Struct to hold swift receive parameters</p>
 <pre><code class="language-solidity">struct SwReceiveParams {
     address token;
     uint256 amount;
