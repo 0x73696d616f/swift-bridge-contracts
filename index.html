@@ -149,19 +149,18 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="swiftgate-contracts"><a class="header" href="#swiftgate-contracts">SwiftGate contracts</a></h1>
-<h2 id="swift-gate---same-for-all-chains"><a class="header" href="#swift-gate---same-for-all-chains">Swift Gate - Same for all chains</a></h2>
-<p>0xB84f07612F4bfEc42E042b6CDD26df496b3d397f</p>
-<h2 id="mintable-token-for-testing"><a class="header" href="#mintable-token-for-testing">Mintable Token For Testing</a></h2>
-<h3 id="optimism"><a class="header" href="#optimism">OPTIMISM</a></h3>
-<p>0x2368B457E93DB89FB67f0dA1554af642F61fa0A8</p>
-<h3 id="sroll"><a class="header" href="#sroll">SROLL</a></h3>
-<p>0x030A74336C10c3214602e515f3fbc604D4451691</p>
-<h3 id="chiado"><a class="header" href="#chiado">CHIADO</a></h3>
-<p>0x0B49058317F8d67ba09587a4d17e8C04907fa0B2</p>
-<h3 id="mantle"><a class="header" href="#mantle">MANTLE</a></h3>
-<p>0xb33200abe32eB66C4ca6F5a4F92a8D8cBA47DBaD</p>
-<h3 id="taiko"><a class="header" href="#taiko">TAIKO</a></h3>
-<p>0xc32cF0BF647259335a2151191CEDEDd1A22CaFd7</p>
+<h2 id="swift-gate---0xb84f07612f4bfec42e042b6cdd26df496b3d397f"><a class="header" href="#swift-gate---0xb84f07612f4bfec42e042b6cdd26df496b3d397f">Swift Gate - 0xB84f07612F4bfEc42E042b6CDD26df496b3d397f</a></h2>
+<p>The swift gate smart contract is responsible for bridging tokens between different blockchains. The governors whitelist tokens on a certain chain id that can be bridged to other chain ids. </p>
+<p>Users call <code>swiftSend()</code> to bridge tokens to other chain and specify if they want the <code>swiftReceive()</code>call on the destination chain to be batched with other users bridged tokens or not. Calling <code>swiftSend()</code> with the <code>isSingle_</code> argument to true will inccur in much bigger gas costs, but instant bridging, whereas setting this flag to false is slower but about 6 times cheaper.</p>
+<p>The governors, each running the backend, sign a transaction specifying tokens to be received on the destination chain after users call <code>swiftSend()</code> in the source chain.</p>
+<p>Validating 13 signatures is an expensive process and to compensate for this, swift gate leverages batching user deposits so that for a batch of bridged tokens only a message hash has to be signed. For example, for each bridged token, a regular bridge would require 2 transactions, one on the source chain and one on the destination chain, having to validate 13 signatures once. In this case, for 10 deposits, it would require 20 transactions in which the signatures are validated 10 times. However, if the bridged assets are batched, it takes 11 transactions (10 <code>swiftSend()</code> + 1 <code>swiftReceive()</code>) and the signatures are only validate once.</p>
+<h2 id="token-factory---0xdbaf1e8f67b63a1da2f9bb0214d6087caa58170d"><a class="header" href="#token-factory---0xdbaf1e8f67b63a1da2f9bb0214d6087caa58170d">Token Factory - 0xDBAF1e8f67B63a1DA2f9bB0214d6087cAA58170D</a></h2>
+<p>The token factory creates wrapped tokens for tokens on other blockchains. Its owner is the swift gate, from which governors can create new wrapped tokens. </p>
+<p>The tokens are <a href="https://docs.openzeppelin.com/contracts/4.x/api/proxy#Clones">clones</a>, which means that they have a common implementation as <code>SwiftERC20</code>. When a token is created on the token factory, it deploys a proxy which points to the implementation, effectively reducing gas costs significantly for the governors.</p>
+<h2 id="swifterc20---0x46972365c218484d1286b6ea08d35bd5aaa935c4"><a class="header" href="#swifterc20---0x46972365c218484d1286b6ea08d35bd5aaa935c4">SwiftERC20 - 0x46972365C218484d1286B6Ea08d35bD5aaa935C4</a></h2>
+<p>Implementation of wrapped tokens of the swift gate. Regular ERC20 token that is mintable and burnable by the swift gate. When a token not native to a blockchain is received, the receiver is minted wrapped tokens. When the user wants to bridge back the tokens, these are burned and they get the remote tokens on the original blockchain.</p>
+<h2 id="smart-contracts-architecture"><a class="header" href="#smart-contracts-architecture">Smart Contracts Architecture</a></h2>
+<p><img src="swift-gate-contracts-architecture.svg" alt="alt text" /></p>
 
                     </main>
 
