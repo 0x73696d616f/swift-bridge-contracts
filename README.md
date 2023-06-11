@@ -10,6 +10,8 @@ The governors, each running the backend, sign a transaction specifying tokens to
 
 Validating 13 signatures is an expensive process and to compensate for this, swift gate leverages batching user deposits so that for a batch of bridged tokens only a message hash has to be signed. For example, for each bridged token, a regular bridge would require 2 transactions, one on the source chain and one on the destination chain, having to validate 13 signatures once. In this case, for 10 deposits, it would require 20 transactions in which the signatures are validated 10 times. However, if the bridged assets are batched, it takes 11 transactions (10 `swiftSend()` + 1 `swiftReceive()`) and the signatures are only validate once.
 
+The governors are rewarded with yield from depositing the bridged assets into Aave. They can call functions `depositToAave()` and `withdrawFromAave()` to claim their rewards.
+
 ## Token Factory - 0xDBAF1e8f67B63a1DA2f9bB0214d6087cAA58170D
 
 The token factory creates wrapped tokens for tokens on other blockchains. Its owner is the swift gate, from which governors can create new wrapped tokens. 
