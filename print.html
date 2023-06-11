@@ -161,9 +161,9 @@
 <h2 id="swifterc20---0x46972365c218484d1286b6ea08d35bd5aaa935c4"><a class="header" href="#swifterc20---0x46972365c218484d1286b6ea08d35bd5aaa935c4">SwiftERC20 - 0x46972365C218484d1286B6Ea08d35bD5aaa935C4</a></h2>
 <p>Implementation of wrapped tokens of the swift gate. Regular ERC20 token that is mintable and burnable by the swift gate. When a token not native to a blockchain is received, the receiver is minted wrapped tokens. When the user wants to bridge back the tokens, these are burned and they get the remote tokens on the original blockchain.</p>
 <h2 id="smart-contracts-architecture"><a class="header" href="#smart-contracts-architecture">Smart Contracts Architecture</a></h2>
-<p><img src="https://github.com/0x73696d616f/swift-gate-contracts/blob/master/swift-gate-contracts-architecture.png" alt="alt text" /></p>
+<p><img src="https://github.com/0x73696d616f/swift-gate-contracts/blob/master/smart-contracts-architecture.png" alt="alt text" /></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="swifterc20"><a class="header" href="#swifterc20">SwiftERC20</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/6c7b3da5cb86ad5d6930976bfb6b942e77cbd3f1/src/SwiftERC20.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/e44fc1d250e677db34697ed8eabbfa8070f84c39/src/SwiftERC20.sol">Git Source</a></p>
 <p><strong>Inherits:</strong>
 ERC20Upgradeable</p>
 <h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
@@ -228,7 +228,7 @@ ERC20Upgradeable</p>
 <pre><code class="language-solidity">error OnlySwiftGateError(address msgSender_);
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="swiftgate"><a class="header" href="#swiftgate">SwiftGate</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/6c7b3da5cb86ad5d6930976bfb6b942e77cbd3f1/src/SwiftGate.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/e44fc1d250e677db34697ed8eabbfa8070f84c39/src/SwiftGate.sol">Git Source</a></p>
 <h2 id="state-variables-1"><a class="header" href="#state-variables-1">State Variables</a></h2>
 <h3 id="_chainid"><a class="header" href="#_chainid">_chainId</a></h3>
 <p>chain id of swift gate on this chain</p>
@@ -610,7 +610,7 @@ ERC20Upgradeable</p>
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tokenfactory"><a class="header" href="#tokenfactory">TokenFactory</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/6c7b3da5cb86ad5d6930976bfb6b942e77cbd3f1/src/TokenFactory.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/e44fc1d250e677db34697ed8eabbfa8070f84c39/src/TokenFactory.sol">Git Source</a></p>
 <h2 id="state-variables-2"><a class="header" href="#state-variables-2">State Variables</a></h2>
 <h3 id="_implementation"><a class="header" href="#_implementation">_implementation</a></h3>
 <p>implementation of the swiftGate wrapped tokens</p>
