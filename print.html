@@ -155,6 +155,7 @@
 <p>Users call <code>swiftSend()</code> to bridge tokens to other chain and specify if they want the <code>swiftReceive()</code>call on the destination chain to be batched with other users bridged tokens or not. Calling <code>swiftSend()</code> with the <code>isSingle_</code> argument to true will inccur in much bigger gas costs, but instant bridging, whereas setting this flag to false is slower but about 6 times cheaper.</p>
 <p>The governors, each running the backend, sign a transaction specifying tokens to be received on the destination chain after users call <code>swiftSend()</code> in the source chain.</p>
 <p>Validating 13 signatures is an expensive process and to compensate for this, swift gate leverages batching user deposits so that for a batch of bridged tokens only a message hash has to be signed. For example, for each bridged token, a regular bridge would require 2 transactions, one on the source chain and one on the destination chain, having to validate 13 signatures once. In this case, for 10 deposits, it would require 20 transactions in which the signatures are validated 10 times. However, if the bridged assets are batched, it takes 11 transactions (10 <code>swiftSend()</code> + 1 <code>swiftReceive()</code>) and the signatures are only validate once.</p>
+<p>The governors are rewarded with yield from depositing the bridged assets into Aave. They can call functions <code>depositToAave()</code> and <code>withdrawFromAave()</code> to claim their rewards.</p>
 <h2 id="token-factory---0xdbaf1e8f67b63a1da2f9bb0214d6087caa58170d"><a class="header" href="#token-factory---0xdbaf1e8f67b63a1da2f9bb0214d6087caa58170d">Token Factory - 0xDBAF1e8f67B63a1DA2f9bB0214d6087cAA58170D</a></h2>
 <p>The token factory creates wrapped tokens for tokens on other blockchains. Its owner is the swift gate, from which governors can create new wrapped tokens. </p>
 <p>The tokens are <a href="https://docs.openzeppelin.com/contracts/4.x/api/proxy#Clones">clones</a>, which means that they have a common implementation as <code>SwiftERC20</code>. When a token is created on the token factory, it deploys a proxy which points to the implementation, effectively reducing gas costs significantly for the governors.</p>
@@ -164,7 +165,7 @@
 <p><img src="https://github.com/0x73696d616f/swift-gate-contracts/blob/master/smart-contracts-architecture.png" alt="alt text" />
 <a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/master/smart-contracts-architecture.png">imageUrl</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="swifterc20"><a class="header" href="#swifterc20">SwiftERC20</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/0fa05724c31a67e49f28ffb78adea14cc79409f5/src/SwiftERC20.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/5b645d91e245bdc9a96e252052b0ffcc24fd3127/src/SwiftERC20.sol">Git Source</a></p>
 <p><strong>Inherits:</strong>
 ERC20Upgradeable</p>
 <h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
@@ -229,7 +230,7 @@ ERC20Upgradeable</p>
 <pre><code class="language-solidity">error OnlySwiftGateError(address msgSender_);
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="swiftgate"><a class="header" href="#swiftgate">SwiftGate</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/0fa05724c31a67e49f28ffb78adea14cc79409f5/src/SwiftGate.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/5b645d91e245bdc9a96e252052b0ffcc24fd3127/src/SwiftGate.sol">Git Source</a></p>
 <h2 id="state-variables-1"><a class="header" href="#state-variables-1">State Variables</a></h2>
 <h3 id="_chainid"><a class="header" href="#_chainid">_chainId</a></h3>
 <p>chain id of swift gate on this chain</p>
@@ -611,7 +612,7 @@ ERC20Upgradeable</p>
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tokenfactory"><a class="header" href="#tokenfactory">TokenFactory</a></h1>
-<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/0fa05724c31a67e49f28ffb78adea14cc79409f5/src/TokenFactory.sol">Git Source</a></p>
+<p><a href="https://github.com/0x73696d616f/swift-gate-contracts/blob/5b645d91e245bdc9a96e252052b0ffcc24fd3127/src/TokenFactory.sol">Git Source</a></p>
 <h2 id="state-variables-2"><a class="header" href="#state-variables-2">State Variables</a></h2>
 <h3 id="_implementation"><a class="header" href="#_implementation">_implementation</a></h3>
 <p>implementation of the swiftGate wrapped tokens</p>
