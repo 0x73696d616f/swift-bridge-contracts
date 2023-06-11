@@ -22,5 +22,5 @@ Implementation of wrapped tokens of the swift gate. Regular ERC20 token that is 
 
 ## Smart Contracts Architecture
 
-![alt text](https://github.com/0x73696d616f/swift-gate-contracts/blob/master/smart-contracts-architecture.png)
+![https://github.com/0x73696d616f/swift-gate-contracts/blob/master/smart-contracts-architecture.png](https://github.com/0x73696d616f/swift-gate-contracts/blob/master/smart-contracts-architecture.png)
 
